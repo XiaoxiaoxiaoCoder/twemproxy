@@ -23,10 +23,17 @@
 typedef int (*array_compare_t)(const void *, const void *);
 typedef rstatus_t (*array_each_t)(void *, void *);
 
+/*
+ * 数组结构体
+ */
 struct array {
+    /* 已存在的元素个数 */
     uint32_t nelem;  /* # element */
+    /* 真实数组地址 */
     void     *elem;  /* element */
+    /* 数组元素大小 */
     size_t   size;   /* element size */
+    /* 分配存储空间的元素个数 */
     uint32_t nalloc; /* # allocated element */
 };
 

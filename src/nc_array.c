@@ -19,6 +19,9 @@
 
 #include <nc_core.h>
 
+/*
+ * 创建一个数组，数组元素大小为 size，数组可以容纳的元素个数为 n
+ */
 struct array *
 array_create(uint32_t n, size_t size)
 {
@@ -44,6 +47,9 @@ array_create(uint32_t n, size_t size)
     return a;
 }
 
+/*
+ * 销毁一个数组
+ */
 void
 array_destroy(struct array *a)
 {
@@ -51,6 +57,9 @@ array_destroy(struct array *a)
     nc_free(a);
 }
 
+/*
+ * 初始化一个数组，数组元素大小为 size，元素个数为 n
+ */
 rstatus_t
 array_init(struct array *a, uint32_t n, size_t size)
 {
@@ -68,6 +77,9 @@ array_init(struct array *a, uint32_t n, size_t size)
     return NC_OK;
 }
 
+/*
+ * 释放一个数组
+ */
 void
 array_deinit(struct array *a)
 {
@@ -78,6 +90,9 @@ array_deinit(struct array *a)
     }
 }
 
+/*
+ * 返回指定元素 elem 的下标
+ */
 uint32_t
 array_idx(struct array *a, void *elem)
 {
@@ -97,6 +112,10 @@ array_idx(struct array *a, void *elem)
     return idx;
 }
 
+/*
+ * push一个数据至数组中，实际为尾部数据
+ * 此处只返回元素的地址，并不正在压入数据
+ */
 void *
 array_push(struct array *a)
 {
@@ -122,6 +141,9 @@ array_push(struct array *a)
     return elem;
 }
 
+/*
+ * 弹出一个元素，实际上是弹出尾部数据的地址,并将元素个数减1
+ */
 void *
 array_pop(struct array *a)
 {
@@ -135,6 +157,9 @@ array_pop(struct array *a)
     return elem;
 }
 
+/*
+ * 获取指定下标 idx 的元素
+ */
 void *
 array_get(struct array *a, uint32_t idx)
 {
@@ -148,6 +173,9 @@ array_get(struct array *a, uint32_t idx)
     return elem;
 }
 
+/*
+ * 返回尾部数据
+ */
 void *
 array_top(struct array *a)
 {
@@ -156,6 +184,9 @@ array_top(struct array *a)
     return array_get(a, a->nelem - 1);
 }
 
+/*
+ * 交换两个数组元素
+ */
 void
 array_swap(struct array *a, struct array *b)
 {
@@ -170,6 +201,9 @@ array_swap(struct array *a, struct array *b)
  * Sort nelem elements of the array in ascending order based on the
  * compare comparator.
  */
+/*
+ * 数组排序
+ */
 void
 array_sort(struct array *a, array_compare_t compare)
 {
@@ -181,6 +215,9 @@ array_sort(struct array *a, array_compare_t compare)
 /*
  * Calls the func once for each element in the array as long as func returns
  * success. On failure short-circuits and returns the error status.
+ */
+/*
+ * 遍历数组
  */
 rstatus_t
 array_each(struct array *a, array_each_t func, void *data)
