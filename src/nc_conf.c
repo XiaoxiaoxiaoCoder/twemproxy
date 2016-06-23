@@ -113,6 +113,9 @@ static struct command conf_commands[] = {
     null_command
 };
 
+/*
+ * 初始化后端server配置信息
+ */
 static void
 conf_server_init(struct conf_server *cs)
 {
@@ -129,6 +132,9 @@ conf_server_init(struct conf_server *cs)
     log_debug(LOG_VVERB, "init conf server %p", cs);
 }
 
+/*
+ * 重置后端server配置信息
+ */
 static void
 conf_server_deinit(struct conf_server *cs)
 {
@@ -139,6 +145,9 @@ conf_server_deinit(struct conf_server *cs)
     log_debug(LOG_VVERB, "deinit conf server %p", cs);
 }
 
+/*
+ * 将配置信息节点 elem 的信息转换至 svr pool data 中的节点
+ */
 rstatus_t
 conf_server_each_transform(void *elem, void *data)
 {
@@ -154,18 +163,18 @@ conf_server_each_transform(void *elem, void *data)
     s->idx = array_idx(server, s);
     s->owner = NULL;
 
-    s->pname = cs->pname;
-    s->name = cs->name;
-    s->addrstr = cs->addrstr;
-    s->port = (uint16_t)cs->port;
-    s->weight = (uint32_t)cs->weight;
+    s->pname    = cs->pname;
+    s->name     = cs->name;
+    s->addrstr  = cs->addrstr;
+    s->port     = (uint16_t)cs->port;
+    s->weight   = (uint32_t)cs->weight;
 
     nc_memcpy(&s->info, &cs->info, sizeof(cs->info));
 
     s->ns_conn_q = 0;
     TAILQ_INIT(&s->s_conn_q);
 
-    s->next_retry = 0LL;
+    s->next_retry    = 0LL;
     s->failure_count = 0;
 
     log_debug(LOG_VERB, "transform to server %"PRIu32" '%.*s'",
@@ -174,6 +183,9 @@ conf_server_each_transform(void *elem, void *data)
     return NC_OK;
 }
 
+/*
+ * 初始化pool配置信息
+ */
 static rstatus_t
 conf_pool_init(struct conf_pool *cp, struct string *name)
 {
@@ -197,14 +209,14 @@ conf_pool_init(struct conf_pool *cp, struct string *name)
 
     cp->client_connections = CONF_UNSET_NUM;
 
-    cp->redis = CONF_UNSET_NUM;
-    cp->tcpkeepalive = CONF_UNSET_NUM;
-    cp->redis_db = CONF_UNSET_NUM;
-    cp->preconnect = CONF_UNSET_NUM;
-    cp->auto_eject_hosts = CONF_UNSET_NUM;
-    cp->server_connections = CONF_UNSET_NUM;
-    cp->server_retry_timeout = CONF_UNSET_NUM;
-    cp->server_failure_limit = CONF_UNSET_NUM;
+    cp->redis                   = CONF_UNSET_NUM;
+    cp->tcpkeepalive            = CONF_UNSET_NUM;
+    cp->redis_db                = CONF_UNSET_NUM;
+    cp->preconnect              = CONF_UNSET_NUM;
+    cp->auto_eject_hosts        = CONF_UNSET_NUM;
+    cp->server_connections      = CONF_UNSET_NUM;
+    cp->server_retry_timeout    = CONF_UNSET_NUM;
+    cp->server_failure_limit    = CONF_UNSET_NUM;
 
     array_null(&cp->server);
 
@@ -227,6 +239,9 @@ conf_pool_init(struct conf_pool *cp, struct string *name)
     return NC_OK;
 }
 
+/*
+ * 重置pool配置信息
+ */
 static void
 conf_pool_deinit(struct conf_pool *cp)
 {
@@ -247,6 +262,9 @@ conf_pool_deinit(struct conf_pool *cp)
     log_debug(LOG_VVERB, "deinit conf pool %p", cp);
 }
 
+/*
+ * 将 conf_pool ele 节点的配置信息转换为 server_pool data 的信息
+ */
 rstatus_t
 conf_pool_each_transform(void *elem, void *data)
 {
@@ -263,45 +281,45 @@ conf_pool_each_transform(void *elem, void *data)
     sp->idx = array_idx(server_pool, sp);
     sp->ctx = NULL;
 
-    sp->p_conn = NULL;
-    sp->nc_conn_q = 0;
+    sp->p_conn      = NULL;
+    sp->nc_conn_q   = 0;
     TAILQ_INIT(&sp->c_conn_q);
 
     array_null(&sp->server);
-    sp->ncontinuum = 0;
-    sp->nserver_continuum = 0;
-    sp->continuum = NULL;
-    sp->nlive_server = 0;
-    sp->next_rebuild = 0LL;
+    sp->ncontinuum          = 0;
+    sp->nserver_continuum   = 0;
+    sp->continuum           = NULL;
+    sp->nlive_server        = 0;
+    sp->next_rebuild        = 0LL;
 
-    sp->name = cp->name;
+    sp->name    = cp->name;
     sp->addrstr = cp->listen.pname;
-    sp->port = (uint16_t)cp->listen.port;
+    sp->port    = (uint16_t)cp->listen.port;
 
     nc_memcpy(&sp->info, &cp->listen.info, sizeof(cp->listen.info));
     sp->perm = cp->listen.perm;
 
-    sp->key_hash_type = cp->hash;
-    sp->key_hash = hash_algos[cp->hash];
-    sp->dist_type = cp->distribution;
-    sp->hash_tag = cp->hash_tag;
+    sp->key_hash_type   = cp->hash;
+    sp->key_hash        = hash_algos[cp->hash];
+    sp->dist_type       = cp->distribution;
+    sp->hash_tag        = cp->hash_tag;
 
     sp->tcpkeepalive = cp->tcpkeepalive ? 1 : 0;
 
-    sp->redis = cp->redis ? 1 : 0;
-    sp->timeout = cp->timeout;
-    sp->backlog = cp->backlog;
-    sp->redis_db = cp->redis_db;
+    sp->redis       = cp->redis ? 1 : 0;
+    sp->timeout     = cp->timeout;
+    sp->backlog     = cp->backlog;
+    sp->redis_db    = cp->redis_db;
 
-    sp->redis_auth = cp->redis_auth;
+    sp->redis_auth   = cp->redis_auth;
     sp->require_auth = cp->redis_auth.len > 0 ? 1 : 0;
 
-    sp->client_connections = (uint32_t)cp->client_connections;
-    sp->server_connections = (uint32_t)cp->server_connections;
+    sp->client_connections   = (uint32_t)cp->client_connections;
+    sp->server_connections   = (uint32_t)cp->server_connections;
     sp->server_retry_timeout = (int64_t)cp->server_retry_timeout * 1000LL;
     sp->server_failure_limit = (uint32_t)cp->server_failure_limit;
-    sp->auto_eject_hosts = cp->auto_eject_hosts ? 1 : 0;
-    sp->preconnect = cp->preconnect ? 1 : 0;
+    sp->auto_eject_hosts     = cp->auto_eject_hosts ? 1 : 0;
+    sp->preconnect           = cp->preconnect ? 1 : 0;
 
     status = server_init(&sp->server, &cp->server, sp);
     if (status != NC_OK) {
@@ -314,6 +332,9 @@ conf_pool_each_transform(void *elem, void *data)
     return NC_OK;
 }
 
+/*
+ * 打印配置信息
+ */
 static void
 conf_dump(struct conf *cf)
 {
@@ -363,6 +384,9 @@ conf_dump(struct conf *cf)
     }
 }
 
+/*
+ * 初始化配置解析
+ */
 static rstatus_t
 conf_yaml_init(struct conf *cf)
 {
@@ -390,6 +414,9 @@ conf_yaml_init(struct conf *cf)
     return NC_OK;
 }
 
+/*
+ * 重置配置解析
+ */
 static void
 conf_yaml_deinit(struct conf *cf)
 {
@@ -399,6 +426,9 @@ conf_yaml_deinit(struct conf *cf)
     }
 }
 
+/*
+ * 查找下一个 token
+ */
 static rstatus_t
 conf_token_next(struct conf *cf)
 {
@@ -416,6 +446,9 @@ conf_token_next(struct conf *cf)
     return NC_OK;
 }
 
+/*
+ * token 解析完毕
+ */
 static void
 conf_token_done(struct conf *cf)
 {
@@ -427,6 +460,9 @@ conf_token_done(struct conf *cf)
     }
 }
 
+/*
+ * 查找下一个 event
+ */
 static rstatus_t
 conf_event_next(struct conf *cf)
 {
@@ -444,6 +480,9 @@ conf_event_next(struct conf *cf)
     return NC_OK;
 }
 
+/*
+ * event 解析完毕
+ */
 static void
 conf_event_done(struct conf *cf)
 {
@@ -453,6 +492,9 @@ conf_event_done(struct conf *cf)
     }
 }
 
+/*
+ * push 一个参数至参数列表中
+ */
 static rstatus_t
 conf_push_scalar(struct conf *cf)
 {
@@ -484,6 +526,9 @@ conf_push_scalar(struct conf *cf)
     return NC_OK;
 }
 
+/*
+ * 从参数列表中弹出一个参数
+ */
 static void
 conf_pop_scalar(struct conf *cf)
 {
@@ -494,6 +539,10 @@ conf_pop_scalar(struct conf *cf)
     string_deinit(value);
 }
 
+/*
+ * 根据参数handler解析配置参数
+ * data 为 conf_pool
+ */
 static rstatus_t
 conf_handler(struct conf *cf, void *data)
 {
@@ -507,9 +556,9 @@ conf_handler(struct conf *cf, void *data)
         return conf_pool_init(data, value);
     }
 
-    narg = array_n(&cf->arg);
+    narg  = array_n(&cf->arg);
     value = array_get(&cf->arg, narg - 1);
-    key = array_get(&cf->arg, narg - 2);
+    key   = array_get(&cf->arg, narg - 2);
 
     log_debug(LOG_VVERB, "conf handler on %.*s: %.*s", key->len, key->data,
               value->len, value->data);
@@ -535,6 +584,9 @@ conf_handler(struct conf *cf, void *data)
     return NC_ERROR;
 }
 
+/*
+ * 开始解析配置
+ */
 static rstatus_t
 conf_begin_parse(struct conf *cf)
 {
@@ -580,6 +632,9 @@ conf_begin_parse(struct conf *cf)
     return NC_OK;
 }
 
+/*
+ * 解析配置结束
+ */
 static rstatus_t
 conf_end_parse(struct conf *cf)
 {
@@ -618,6 +673,9 @@ conf_end_parse(struct conf *cf)
     return NC_OK;
 }
 
+/*
+ * 解析核心配置
+ */
 static rstatus_t
 conf_parse_core(struct conf *cf, void *data)
 {
@@ -721,6 +779,9 @@ conf_parse_core(struct conf *cf, void *data)
     return conf_parse_core(cf, data);
 }
 
+/*
+ * 解析配置
+ */
 static rstatus_t
 conf_parse(struct conf *cf)
 {
@@ -749,6 +810,9 @@ conf_parse(struct conf *cf)
     return NC_OK;
 }
 
+/*
+ * 打开配置文件,并初始化配置结构体
+ */
 static struct conf *
 conf_open(char *filename)
 {
@@ -784,23 +848,26 @@ conf_open(char *filename)
         return NULL;
     }
 
-    cf->fname = filename;
-    cf->fh = fh;
-    cf->depth = 0;
+    cf->fname   = filename;
+    cf->fh      = fh;
+    cf->depth   = 0;
     /* parser, event, and token are initialized later */
-    cf->seq = 0;
+    cf->seq     = 0;
     cf->valid_parser = 0;
-    cf->valid_event = 0;
-    cf->valid_token = 0;
-    cf->sound = 0;
+    cf->valid_event  = 0;
+    cf->valid_token  = 0;
+    cf->sound  = 0;
     cf->parsed = 0;
-    cf->valid = 0;
+    cf->valid  = 0;
 
     log_debug(LOG_VVERB, "opened conf '%s'", filename);
 
     return cf;
 }
 
+/*
+ * 验证配置文件是否正确
+ */
 static rstatus_t
 conf_validate_document(struct conf *cf)
 {
@@ -849,6 +916,9 @@ conf_validate_document(struct conf *cf)
     return NC_OK;
 }
 
+/*
+ * 验证 token 的正确性
+ */
 static rstatus_t
 conf_validate_tokens(struct conf *cf)
 {
@@ -969,6 +1039,9 @@ conf_validate_tokens(struct conf *cf)
     return !error ? NC_OK : NC_ERROR;
 }
 
+/*
+ * 验证 structure 是否正确
+ */
 static rstatus_t
 conf_validate_structure(struct conf *cf)
 {
@@ -1111,6 +1184,9 @@ conf_validate_structure(struct conf *cf)
     return !error ? NC_OK : NC_ERROR;
 }
 
+/*
+ * 准备开始验证配置文件是否正确
+ */
 static rstatus_t
 conf_pre_validate(struct conf *cf)
 {
@@ -1136,6 +1212,9 @@ conf_pre_validate(struct conf *cf)
     return NC_OK;
 }
 
+/*
+ * 比较两个server名称是否相同
+ */
 static int
 conf_server_name_cmp(const void *t1, const void *t2)
 {
@@ -1144,6 +1223,9 @@ conf_server_name_cmp(const void *t1, const void *t2)
     return string_compare(&s1->name, &s2->name);
 }
 
+/*
+ * 比较两个pool名称是否相同
+ */
 static int
 conf_pool_name_cmp(const void *t1, const void *t2)
 {
@@ -1152,6 +1234,9 @@ conf_pool_name_cmp(const void *t1, const void *t2)
     return string_compare(&p1->name, &p2->name);
 }
 
+/*
+ * 比较两个listen是否相同
+ */
 static int
 conf_pool_listen_cmp(const void *t1, const void *t2)
 {
@@ -1160,6 +1245,9 @@ conf_pool_listen_cmp(const void *t1, const void *t2)
     return string_compare(&p1->listen.pname, &p2->listen.pname);
 }
 
+/*
+ * 验证server配置是否正确
+ */
 static rstatus_t
 conf_validate_server(struct conf *cf, struct conf_pool *cp)
 {
@@ -1201,6 +1289,9 @@ conf_validate_server(struct conf *cf, struct conf_pool *cp)
     return NC_OK;
 }
 
+/*
+ * 验证 pool 配置是否正确
+ */
 static rstatus_t
 conf_validate_pool(struct conf *cf, struct conf_pool *cp)
 {
@@ -1284,6 +1375,9 @@ conf_validate_pool(struct conf *cf, struct conf_pool *cp)
     return NC_OK;
 }
 
+/*
+ * 验证配置是否正确
+ */
 static rstatus_t
 conf_post_validate(struct conf *cf)
 {
@@ -1353,6 +1447,9 @@ conf_post_validate(struct conf *cf)
     return NC_OK;
 }
 
+/*
+ * 创建一个配置结构体并解析配置文件
+ */
 struct conf *
 conf_create(char *filename)
 {
@@ -1398,6 +1495,9 @@ error:
     return NULL;
 }
 
+/*
+ * 销毁一个配置结构体
+ */
 void
 conf_destroy(struct conf *cf)
 {
@@ -1414,6 +1514,9 @@ conf_destroy(struct conf *cf)
     nc_free(cf);
 }
 
+/*
+ * 给配置的指定参数项设置string值
+ */
 char *
 conf_set_string(struct conf *cf, struct command *cmd, void *conf)
 {
@@ -1438,6 +1541,9 @@ conf_set_string(struct conf *cf, struct command *cmd, void *conf)
     return CONF_OK;
 }
 
+/*
+ * 设置配置中listen配置信息
+ */
 char *
 conf_set_listen(struct conf *cf, struct command *cmd, void *conf)
 {
@@ -1529,6 +1635,9 @@ conf_set_listen(struct conf *cf, struct command *cmd, void *conf)
     return CONF_OK;
 }
 
+/*
+ * 添加一个server配置信息至指定配置中
+ */
 char *
 conf_add_server(struct conf *cf, struct command *cmd, void *conf)
 {
@@ -1554,16 +1663,16 @@ conf_add_server(struct conf *cf, struct command *cmd, void *conf)
     value = array_top(&cf->arg);
 
     /* parse "hostname:port:weight [name]" or "/path/unix_socket:weight [name]" from the end */
-    p = value->data + value->len - 1;
-    start = value->data;
-    addr = NULL;
-    addrlen = 0;
-    weight = NULL;
-    weightlen = 0;
-    port = NULL;
-    portlen = 0;
-    name = NULL;
-    namelen = 0;
+    p           = value->data + value->len - 1;
+    start       = value->data;
+    addr        = NULL;
+    addrlen     = 0;
+    weight      = NULL;
+    weightlen   = 0;
+    port        = NULL;
+    portlen     = 0;
+    name        = NULL;
+    namelen     = 0;
 
     delimlen = value->data[0] == '/' ? 2 : 3;
 
@@ -1607,15 +1716,15 @@ conf_add_server(struct conf *cf, struct command *cmd, void *conf)
         return "has an invalid \"hostname:port:weight [name]\"or \"/path/unix_socket:weight [name]\" format string";
     }
 
-    pname = value->data;
+    pname    = value->data;
     pnamelen = namelen > 0 ? value->len - (namelen + 1) : value->len;
-    status = string_copy(&field->pname, pname, pnamelen);
+    status   = string_copy(&field->pname, pname, pnamelen);
     if (status != NC_OK) {
         array_pop(a);
         return CONF_ERROR;
     }
 
-    addr = start;
+    addr    = start;
     addrlen = (uint32_t)(p - start + 1);
 
     field->weight = nc_atoi(weight, weightlen);
@@ -1669,6 +1778,9 @@ conf_add_server(struct conf *cf, struct command *cmd, void *conf)
     return CONF_OK;
 }
 
+/*
+ * 将配置中指定的配置项设置为num数值
+ */
 char *
 conf_set_num(struct conf *cf, struct command *cmd, void *conf)
 {
@@ -1695,6 +1807,9 @@ conf_set_num(struct conf *cf, struct command *cmd, void *conf)
     return CONF_OK;
 }
 
+/*
+ * 将配置中指定的配置项设置为 bool 值
+ */
 char *
 conf_set_bool(struct conf *cf, struct command *cmd, void *conf)
 {
@@ -1724,6 +1839,9 @@ conf_set_bool(struct conf *cf, struct command *cmd, void *conf)
     return CONF_OK;
 }
 
+/*
+ * 设置 hash 方法
+ */
 char *
 conf_set_hash(struct conf *cf, struct command *cmd, void *conf)
 {
@@ -1753,6 +1871,9 @@ conf_set_hash(struct conf *cf, struct command *cmd, void *conf)
     return "is not a valid hash";
 }
 
+/*
+ * 设置转发方式
+ */
 char *
 conf_set_distribution(struct conf *cf, struct command *cmd, void *conf)
 {
@@ -1782,6 +1903,9 @@ conf_set_distribution(struct conf *cf, struct command *cmd, void *conf)
     return "is not a valid distribution";
 }
 
+/*
+ * 设置 hash tag
+ */
 char *
 conf_set_hashtag(struct conf *cf, struct command *cmd, void *conf)
 {

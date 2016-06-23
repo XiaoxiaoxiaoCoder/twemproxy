@@ -66,8 +66,13 @@ struct continuum {
     uint32_t value;  /* hash value */
 };
 
+/*
+ * 后端svr连接结构体
+ */
 struct server {
+    /* svr在svr pool 中的id */
     uint32_t           idx;           /* server index */
+    /* 该svr所属的svr pool */
     struct server_pool *owner;        /* owner pool */
 
     struct string      pname;         /* hostname:port:weight (ref in conf_server) */
@@ -84,14 +89,18 @@ struct server {
     uint32_t           failure_count; /* # consecutive failures */
 };
 
+/*
+ * 后端server_pool结构体
+ */
 struct server_pool {
+    /* pool在pool数组的下标 */
     uint32_t           idx;                  /* pool index */
     struct context     *ctx;                 /* owner context */
 
     struct conn        *p_conn;              /* proxy connection (listener) */
     uint32_t           nc_conn_q;            /* # client connection */
     struct conn_tqh    c_conn_q;             /* client connection q */
-
+    /* server数组 */
     struct array       server;               /* server[] */
     uint32_t           ncontinuum;           /* # continuum points */
     uint32_t           nserver_continuum;    /* # servers - live and dead on continuum (const) */

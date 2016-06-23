@@ -20,12 +20,28 @@
 
 #include <nc_core.h>
 
+/*
+ * 空闲的 mbuf 个数
+ */
 static uint32_t nfree_mbufq;   /* # free mbuf */
+/*
+ * 空闲的 mbuf 链表
+ */
 static struct mhdr free_mbufq; /* free mbuf q */
 
+/*
+ * mbuf 块大小, 数据区大小+数据结构头部
+ */
 static size_t mbuf_chunk_size; /* mbuf chunk size - header + data (const) */
+/*
+ * mbuf 数据块的偏移,即数据区大小
+ */
 static size_t mbuf_offset;     /* mbuf offset in chunk (const) */
 
+/*
+ * 获取一块空闲的 mbuf
+ * 如果空闲链表中有块，直接返回，否则新创建一个
+ */
 static struct mbuf *
 _mbuf_get(void)
 {
@@ -75,6 +91,9 @@ done:
     return mbuf;
 }
 
+/*
+ * 获取一块 mbuf
+ */
 struct mbuf *
 mbuf_get(void)
 {
@@ -101,6 +120,9 @@ mbuf_get(void)
     return mbuf;
 }
 
+/*
+ * 释放一块 mbuf
+ */
 static void
 mbuf_free(struct mbuf *mbuf)
 {
@@ -115,6 +137,9 @@ mbuf_free(struct mbuf *mbuf)
     nc_free(buf);
 }
 
+/*
+ * 将指定的 mbuf 放入空闲链表
+ */
 void
 mbuf_put(struct mbuf *mbuf)
 {
@@ -131,6 +156,9 @@ mbuf_put(struct mbuf *mbuf)
  * Rewind the mbuf by discarding any of the read or unread data that it
  * might hold.
  */
+/*
+ * 重置指定 mbuf 的数据区
+ */
 void
 mbuf_rewind(struct mbuf *mbuf)
 {
@@ -141,6 +169,9 @@ mbuf_rewind(struct mbuf *mbuf)
 /*
  * Return the length of data in mbuf. Mbuf cannot contain more than
  * 2^32 bytes (4G).
+ */
+/*
+ * 返回指定 mbuf 中数据大小
  */
 uint32_t
 mbuf_length(struct mbuf *mbuf)
@@ -154,6 +185,9 @@ mbuf_length(struct mbuf *mbuf)
  * Return the remaining space size for any new data in mbuf. Mbuf cannot
  * contain more than 2^32 bytes (4G).
  */
+/*
+ * 返回指定 mbuf 中空闲空间大小
+ */
 uint32_t
 mbuf_size(struct mbuf *mbuf)
 {
@@ -166,6 +200,9 @@ mbuf_size(struct mbuf *mbuf)
  * Return the maximum available space size for data in any mbuf. Mbuf cannot
  * contain more than 2^32 bytes (4G).
  */
+/*
+ * 返回mbuf可用的空间大小
+ */
 size_t
 mbuf_data_size(void)
 {
@@ -174,6 +211,9 @@ mbuf_data_size(void)
 
 /*
  * Insert mbuf at the tail of the mhdr Q
+ */
+/*
+ * 将指定的 mbuf 插入指定的 mbuf 链表的尾部
  */
 void
 mbuf_insert(struct mhdr *mhdr, struct mbuf *mbuf)
@@ -184,6 +224,9 @@ mbuf_insert(struct mhdr *mhdr, struct mbuf *mbuf)
 
 /*
  * Remove mbuf from the mhdr Q
+ */
+/*
+ * 从指定的 mbuf 链表中删除指定的 mbuf
  */
 void
 mbuf_remove(struct mhdr *mhdr, struct mbuf *mbuf)
@@ -199,6 +242,9 @@ mbuf_remove(struct mhdr *mhdr, struct mbuf *mbuf)
  *
  * The memory areas should not overlap and the mbuf should have
  * enough space for n bytes.
+ */
+/*
+ * 将起始地址为 pos 长度为 n 的数据拷贝至指定的 mbuf 中
  */
 void
 mbuf_copy(struct mbuf *mbuf, uint8_t *pos, size_t n)
@@ -223,6 +269,10 @@ mbuf_copy(struct mbuf *mbuf, uint8_t *pos, size_t n)
  * string to the head of t.
  *
  * Return new mbuf t, if the split was successful.
+ */
+/*
+ * 将指定 mbuf 链表最后一个 mbuf 数据起始位置pos之后的数据分割至 h 与 t,将数据从 h 拷贝至 t
+ * 操作成功后，返回新 mbuf t
  */
 struct mbuf *
 mbuf_split(struct mhdr *h, uint8_t *pos, mbuf_copy_t cb, void *cbarg)
@@ -259,6 +309,9 @@ mbuf_split(struct mhdr *h, uint8_t *pos, mbuf_copy_t cb, void *cbarg)
     return nbuf;
 }
 
+/*
+ * 初始化 mbuf 
+ */
 void
 mbuf_init(struct instance *nci)
 {
@@ -272,6 +325,9 @@ mbuf_init(struct instance *nci)
               MBUF_HSIZE, mbuf_chunk_size, mbuf_offset, mbuf_offset);
 }
 
+/*
+ * 销毁 mbuf
+ */
 void
 mbuf_deinit(void)
 {

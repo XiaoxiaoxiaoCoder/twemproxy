@@ -23,28 +23,46 @@
 typedef void (*mbuf_copy_t)(struct mbuf *, void *);
 
 struct mbuf {
+    /* 魔幻字 */
     uint32_t           magic;   /* mbuf magic (const) */
+    /* 指向链表中下一节点 */
     STAILQ_ENTRY(mbuf) next;    /* next mbuf */
+    /* 可读数据的位置 */
     uint8_t            *pos;    /* read marker */
+    /* 可写数据的位置,即空闲空间的起始地址 */
     uint8_t            *last;   /* write marker */
+    /* buff 的起始地址 */
     uint8_t            *start;  /* start of buffer (const) */
+    /* buff 的结束地址 */
     uint8_t            *end;    /* end of buffer (const) */
 };
 
+/*
+ * mbuf 链表
+ */
 STAILQ_HEAD(mhdr, mbuf);
 
+/*
+ * 宏定义
+ */
 #define MBUF_MAGIC      0xdeadbeef
 #define MBUF_MIN_SIZE   512
 #define MBUF_MAX_SIZE   16777216
 #define MBUF_SIZE       16384
 #define MBUF_HSIZE      sizeof(struct mbuf)
 
+/*
+ * mbuf 是否为空
+ */
 static inline bool
 mbuf_empty(struct mbuf *mbuf)
 {
     return mbuf->pos == mbuf->last ? true : false;
 }
 
+/*
+ * mbuf 是否已满
+ */
 static inline bool
 mbuf_full(struct mbuf *mbuf)
 {

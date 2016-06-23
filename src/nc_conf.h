@@ -56,6 +56,9 @@
 #define CONF_DEFAULT_KETAMA_PORT             11211
 #define CONF_DEFAULT_TCPKEEPALIVE            false
 
+/*
+ * 监听配置信息
+ */
 struct conf_listen {
     struct string   pname;   /* listen: as "hostname:port" */
     struct string   name;    /* hostname:port */
@@ -65,6 +68,9 @@ struct conf_listen {
     unsigned        valid:1; /* valid? */
 };
 
+/*
+ * 后端cache Svr 的配置信息
+ */
 struct conf_server {
     struct string   pname;      /* server: as "hostname:port:weight" */
     struct string   name;       /* hostname:port or [name] */
@@ -75,12 +81,21 @@ struct conf_server {
     unsigned        valid:1;    /* valid? */
 };
 
+/*
+ * pool 配置信息
+ */
 struct conf_pool {
+    /* pool 名称 */
     struct string      name;                  /* pool name (root node) */
+    /* 监听信息 */
     struct conf_listen listen;                /* listen: */
+    /* hash函数方式 */
     hash_type_t        hash;                  /* hash: */
+    /* hash tag */
     struct string      hash_tag;              /* hash_tag: */
+    /* 分发方式 */
     dist_type_t        distribution;          /* distribution: */
+    /* 超时时间 */
     int                timeout;               /* timeout: */
     int                backlog;               /* backlog: */
     int                client_connections;    /* client_connections: */
@@ -90,6 +105,7 @@ struct conf_pool {
     int                redis_db;              /* redis_db: redis db */
     int                preconnect;            /* preconnect: */
     int                auto_eject_hosts;      /* auto_eject_hosts: */
+    /* 链接数限制 */
     int                server_connections;    /* server_connections: */
     int                server_retry_timeout;  /* server_retry_timeout: in msec */
     int                server_failure_limit;  /* server_failure_limit: */
@@ -97,10 +113,17 @@ struct conf_pool {
     unsigned           valid:1;               /* valid? */
 };
 
+/*
+ * 配置信息，一个配置信息可以有多个 conf_pool
+ */
 struct conf {
+    /* 配置文件名 */
     char          *fname;           /* file name (ref in argv[]) */
+    /* 文件句柄 */
     FILE          *fh;              /* file handle */
+    /* 配置参数数组 */
     struct array  arg;              /* string[] (parsed {key, value} pairs) */
+    /* 配置数组 */
     struct array  pool;             /* conf_pool[] (parsed pools) */
     uint32_t      depth;            /* parsed tree depth */
     yaml_parser_t parser;           /* yaml parser */

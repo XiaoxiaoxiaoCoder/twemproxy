@@ -91,6 +91,9 @@ server_timeout(struct conn *conn)
     return pool->timeout;
 }
 
+/*
+ * 检测 server 是否处于活跃状态中
+ */
 bool
 server_active(struct conn *conn)
 {
@@ -121,6 +124,9 @@ server_active(struct conn *conn)
     return false;
 }
 
+/*
+ * 设置 server 所属的 server_pool
+ */
 static rstatus_t
 server_each_set_owner(void *elem, void *data)
 {
@@ -132,6 +138,9 @@ server_each_set_owner(void *elem, void *data)
     return NC_OK;
 }
 
+/*
+ * 初始化 server 信息
+ */
 rstatus_t
 server_init(struct array *server, struct array *conf_server,
             struct server_pool *sp)
@@ -169,6 +178,9 @@ server_init(struct array *server, struct array *conf_server,
     return NC_OK;
 }
 
+/*
+ * 销毁 server 数组
+ */
 void
 server_deinit(struct array *server)
 {
@@ -183,6 +195,9 @@ server_deinit(struct array *server)
     array_deinit(server);
 }
 
+/*
+ * 返回指定 server 的一个链接 conn
+ */
 struct conn *
 server_conn(struct server *server)
 {
@@ -215,6 +230,9 @@ server_conn(struct server *server)
     return conn;
 }
 
+/*
+ * 提前connect后端svr
+ */
 static rstatus_t
 server_each_preconnect(void *elem, void *data)
 {
@@ -241,6 +259,9 @@ server_each_preconnect(void *elem, void *data)
     return NC_OK;
 }
 
+/*
+ * 断开svr链接
+ */
 static rstatus_t
 server_each_disconnect(void *elem, void *data)
 {
@@ -462,6 +483,9 @@ server_close(struct context *ctx, struct conn *conn)
     conn_put(conn);
 }
 
+/*
+ * 链接后端svr
+ */
 rstatus_t
 server_connect(struct context *ctx, struct server *server, struct conn *conn)
 {
@@ -693,6 +717,9 @@ server_pool_idx(struct server_pool *pool, uint8_t *key, uint32_t keylen)
     return idx;
 }
 
+/*
+ * 根据 key 从server pool中获取hash后对应的server
+ */
 static struct server *
 server_pool_server(struct server_pool *pool, uint8_t *key, uint32_t keylen)
 {
@@ -742,6 +769,9 @@ server_pool_conn(struct context *ctx, struct server_pool *pool, uint8_t *key,
     return conn;
 }
 
+/*
+ * 预先链接所有svr
+ */
 static rstatus_t
 server_pool_each_preconnect(void *elem, void *data)
 {
@@ -760,6 +790,9 @@ server_pool_each_preconnect(void *elem, void *data)
     return NC_OK;
 }
 
+/*
+ * 预先链接所有 server_pool 中的所有 server
+ */
 rstatus_t
 server_pool_preconnect(struct context *ctx)
 {
@@ -773,6 +806,9 @@ server_pool_preconnect(struct context *ctx)
     return NC_OK;
 }
 
+/*
+ * 与 server 断开链接
+ */
 static rstatus_t
 server_pool_each_disconnect(void *elem, void *data)
 {
@@ -787,12 +823,18 @@ server_pool_each_disconnect(void *elem, void *data)
     return NC_OK;
 }
 
+/*
+ * 与 pool 中所有 svr 断开链接
+ */
 void
 server_pool_disconnect(struct context *ctx)
 {
     array_each(&ctx->pool, server_pool_each_disconnect, NULL);
 }
 
+/*
+ * 设置 pool 所属的 context
+ */
 static rstatus_t
 server_pool_each_set_owner(void *elem, void *data)
 {
@@ -804,6 +846,9 @@ server_pool_each_set_owner(void *elem, void *data)
     return NC_OK;
 }
 
+/*
+ * 计算 server_pool 的链接数
+ */
 static rstatus_t
 server_pool_each_calc_connections(void *elem, void *data)
 {
@@ -816,6 +861,9 @@ server_pool_each_calc_connections(void *elem, void *data)
     return NC_OK;
 }
 
+/*
+ * 构建hash结构
+ */
 rstatus_t
 server_pool_run(struct server_pool *pool)
 {
@@ -839,12 +887,18 @@ server_pool_run(struct server_pool *pool)
     return NC_OK;
 }
 
+/*
+ * 构建所有 server_pool hash结构
+ */
 static rstatus_t
 server_pool_each_run(void *elem, void *data)
 {
     return server_pool_run(elem);
 }
 
+/*
+ * 初始化 server_pool
+ */
 rstatus_t
 server_pool_init(struct array *server_pool, struct array *conf_pool,
                  struct context *ctx)
@@ -896,6 +950,9 @@ server_pool_init(struct array *server_pool, struct array *conf_pool,
     return NC_OK;
 }
 
+/*
+ * 销毁 server_pool
+ */
 void
 server_pool_deinit(struct array *server_pool)
 {
