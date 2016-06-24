@@ -199,21 +199,32 @@ struct keypos {
     uint8_t             *end;             /* key end pos */
 };
 
+/*
+ * Msg 结构体
+ */
 struct msg {
+    /* 链表指针 */
     TAILQ_ENTRY(msg)     c_tqe;           /* link in client q */
     TAILQ_ENTRY(msg)     s_tqe;           /* link in server q */
     TAILQ_ENTRY(msg)     m_tqe;           /* link in send q / free q */
 
+    /* 消息id */
     uint64_t             id;              /* message id */
+    /* 对应的消息 */
     struct msg           *peer;           /* message peer */
+    /* 消息所属的链接 conn */
     struct conn          *owner;          /* message owner - client | server */
 
+    /* 红黑树节点 */
     struct rbnode        tmo_rbe;         /* entry in rbtree */
-
+    /* mbuf 链表 */
     struct mhdr          mhdr;            /* message mbuf header */
+    /* 数据长度 */
     uint32_t             mlen;            /* message length */
+    /* 请求开始的时间 */
     int64_t              start_ts;        /* request start timestamp in usec */
 
+    /* 当前解析数据的状态 */
     int                  state;           /* current parser state */
     uint8_t              *pos;            /* parser position marker */
     uint8_t              *token;          /* token marker */

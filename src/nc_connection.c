@@ -81,14 +81,22 @@
  * the queue.
  */
 
+/* 空闲的 conn 数量 */
 static uint32_t nfree_connq;       /* # free conn q */
+/* 空闲的 conn 队列 */
 static struct conn_tqh free_connq; /* free conn q */
+/* 分配的 conn 总数 */
 static uint64_t ntotal_conn;       /* total # connections counter from start */
+/* 当前使用的 conn 数量 */
 static uint32_t ncurr_conn;        /* current # connections */
+/* 客户端使用的 conn 数量 */
 static uint32_t ncurr_cconn;       /* current # client connections */
 
 /*
  * Return the context associated with this connection.
+ */
+/*
+ * 返回指定 conn 所关联的上下文
  */
 struct context *
 conn_to_ctx(struct conn *conn)
@@ -105,6 +113,9 @@ conn_to_ctx(struct conn *conn)
     return pool->ctx;
 }
 
+/*
+ * 获取一个 conn 结构体
+ */
 static struct conn *
 _conn_get(void)
 {
@@ -164,6 +175,9 @@ _conn_get(void)
     return conn;
 }
 
+/*
+ * 获取一个conn，并指定该conn是否为客户端
+ */
 struct conn *
 conn_get(void *owner, bool client, bool redis)
 {
@@ -244,6 +258,9 @@ conn_get(void *owner, bool client, bool redis)
     return conn;
 }
 
+/*
+ * 获取一个代理 conn 结构体
+ */
 struct conn *
 conn_get_proxy(void *owner)
 {
@@ -285,6 +302,9 @@ conn_get_proxy(void *owner)
     return conn;
 }
 
+/*
+ * 释放一个指定的 conn 结构体
+ */
 static void
 conn_free(struct conn *conn)
 {
@@ -292,6 +312,8 @@ conn_free(struct conn *conn)
     nc_free(conn);
 }
 
+/*
+ * 将指定的 conn 放入空闲队列中 */
 void
 conn_put(struct conn *conn)
 {
@@ -309,6 +331,9 @@ conn_put(struct conn *conn)
     ncurr_conn--;
 }
 
+/*
+ * 初始化 conn 结构体队列
+ */
 void
 conn_init(void)
 {
@@ -317,6 +342,9 @@ conn_init(void)
     TAILQ_INIT(&free_connq);
 }
 
+/*
+ * 销毁 conn 结构体队列
+ */
 void
 conn_deinit(void)
 {
@@ -331,6 +359,9 @@ conn_deinit(void)
     ASSERT(nfree_connq == 0);
 }
 
+/*
+ * 通过指定的 conn 接收数据存储于 buf 中
+ */
 ssize_t
 conn_recv(struct conn *conn, void *buf, size_t size)
 {
@@ -381,6 +412,9 @@ conn_recv(struct conn *conn, void *buf, size_t size)
     return NC_ERROR;
 }
 
+/*
+ * 通过指定的 conn 发送数据
+ */
 ssize_t
 conn_sendv(struct conn *conn, struct array *sendv, size_t nsend)
 {
@@ -430,18 +464,27 @@ conn_sendv(struct conn *conn, struct array *sendv, size_t nsend)
     return NC_ERROR;
 }
 
+/*
+ * 返回当前在使用的 conn 数量
+ */
 uint32_t
 conn_ncurr_conn(void)
 {
     return ncurr_conn;
 }
 
+/*
+ * 返回当前 conn 的数据
+ */
 uint64_t
 conn_ntotal_conn(void)
 {
     return ntotal_conn;
 }
 
+/*
+ * 返回当前客户端的 conn 数量
+ */
 uint32_t
 conn_ncurr_cconn(void)
 {
@@ -451,6 +494,9 @@ conn_ncurr_cconn(void)
 /*
  * Returns true if the connection is authenticated or doesn't require
  * authentication, otherwise return false
+ */
+/*
+ * 返回 conn 是否已经验证过合法性
  */
 bool
 conn_authenticated(struct conn *conn)

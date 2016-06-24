@@ -395,6 +395,10 @@ req_server_dequeue_omsgq(struct context *ctx, struct conn *conn, struct msg *msg
     stats_server_decr_by(ctx, conn->owner, out_queue_bytes, msg->mlen);
 }
 
+/*
+ * 准备接收请求，获取一个接收请求的msg主体
+ * alloc 表示在没有 msg 时是否需要创建一个新的 msg
+ */
 struct msg *
 req_recv_next(struct context *ctx, struct conn *conn, bool alloc)
 {

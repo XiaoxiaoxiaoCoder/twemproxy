@@ -24,6 +24,9 @@
 
 static uint32_t ctx_id; /* context generation */
 
+/*
+ * 计算下链接限制数
+ */
 static rstatus_t
 core_calc_connections(struct context *ctx)
 {
@@ -55,16 +58,16 @@ core_ctx_create(struct instance *nci)
     if (ctx == NULL) {
         return NULL;
     }
-    ctx->id = ++ctx_id;
-    ctx->cf = NULL;
-    ctx->stats = NULL;
-    ctx->evb = NULL;
+    ctx->id     = ++ctx_id;
+    ctx->cf     = NULL;
+    ctx->stats  = NULL;
+    ctx->evb    = NULL;
     array_null(&ctx->pool);
     ctx->max_timeout = nci->stats_interval;
-    ctx->timeout = ctx->max_timeout;
-    ctx->max_nfd = 0;
-    ctx->max_ncconn = 0;
-    ctx->max_nsconn = 0;
+    ctx->timeout     = ctx->max_timeout;
+    ctx->max_nfd     = 0;
+    ctx->max_ncconn  = 0;
+    ctx->max_nsconn  = 0;
 
     /* parse and create configuration */
     ctx->cf = conf_create(nci->conf_filename);
@@ -155,6 +158,9 @@ core_ctx_destroy(struct context *ctx)
     nc_free(ctx);
 }
 
+/*
+ * 启动核心服务
+ */
 struct context *
 core_start(struct instance *nci)
 {
@@ -177,6 +183,9 @@ core_start(struct instance *nci)
     return NULL;
 }
 
+/*
+ * 停止服务
+ */
 void
 core_stop(struct context *ctx)
 {
@@ -186,6 +195,9 @@ core_stop(struct context *ctx)
     core_ctx_destroy(ctx);
 }
 
+/*
+ * 接收数据
+ */
 static rstatus_t
 core_recv(struct context *ctx, struct conn *conn)
 {
@@ -201,6 +213,9 @@ core_recv(struct context *ctx, struct conn *conn)
     return status;
 }
 
+/*
+ * 发送数据
+ */
 static rstatus_t
 core_send(struct context *ctx, struct conn *conn)
 {
@@ -216,6 +231,9 @@ core_send(struct context *ctx, struct conn *conn)
     return status;
 }
 
+/*
+ * 关闭链接
+ */
 static void
 core_close(struct context *ctx, struct conn *conn)
 {
@@ -245,6 +263,9 @@ core_close(struct context *ctx, struct conn *conn)
     conn->close(ctx, conn);
 }
 
+/*
+ * 处理链接错误
+ */
 static void
 core_error(struct context *ctx, struct conn *conn)
 {
@@ -261,6 +282,9 @@ core_error(struct context *ctx, struct conn *conn)
     core_close(ctx, conn);
 }
 
+/*
+ * 处理链接超时事件
+ */
 static void
 core_timeout(struct context *ctx)
 {
@@ -306,6 +330,9 @@ core_timeout(struct context *ctx)
     }
 }
 
+/*
+ * 处理链接事件
+ */
 rstatus_t
 core_core(void *arg, uint32_t events)
 {
@@ -351,6 +378,9 @@ core_core(void *arg, uint32_t events)
     return NC_OK;
 }
 
+/*
+ * 处理事件循环
+ */
 rstatus_t
 core_loop(struct context *ctx)
 {

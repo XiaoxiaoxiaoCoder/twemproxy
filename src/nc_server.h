@@ -82,7 +82,9 @@ struct server {
     uint32_t           weight;        /* weight */
     struct sockinfo    info;          /* server socket info */
 
+    /* 与该svr链接的数量 */
     uint32_t           ns_conn_q;     /* # server connection */
+    /* 链接队列 */
     struct conn_tqh    s_conn_q;      /* server connection q */
 
     int64_t            next_retry;    /* next retry time in usec */
@@ -95,10 +97,14 @@ struct server {
 struct server_pool {
     /* pool在pool数组的下标 */
     uint32_t           idx;                  /* pool index */
+    /* pool 所属的上下文 */
     struct context     *ctx;                 /* owner context */
 
+    /* 监听的链接对象 */
     struct conn        *p_conn;              /* proxy connection (listener) */
+    /* 链接上来的客户端数量 */
     uint32_t           nc_conn_q;            /* # client connection */
+    /* 链接的客户端队列 */
     struct conn_tqh    c_conn_q;             /* client connection q */
     /* server数组 */
     struct array       server;               /* server[] */

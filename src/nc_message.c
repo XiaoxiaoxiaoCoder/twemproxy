@@ -109,12 +109,13 @@
  * server.
  */
 
-static uint64_t msg_id;          /* message id counter */
-static uint64_t frag_id;         /* fragment id counter */
-static uint32_t nfree_msgq;      /* # free msg q */
-static struct msg_tqh free_msgq; /* free msg q */
-static struct rbtree tmo_rbt;    /* timeout rbtree */
-static struct rbnode tmo_rbs;    /* timeout rbtree sentinel */
+/* 消息id计数 */
+static uint64_t msg_id;             /* message id counter */
+static uint64_t frag_id;            /* fragment id counter */
+static uint32_t nfree_msgq;         /* # free msg q */
+static struct   msg_tqh free_msgq;  /* free msg q */
+static struct   rbtree tmo_rbt;     /* timeout rbtree */
+static struct   rbnode tmo_rbs;     /* timeout rbtree sentinel */
 
 #define DEFINE_ACTION(_name) string(#_name),
 static struct string msg_type_strings[] = {
@@ -123,6 +124,9 @@ static struct string msg_type_strings[] = {
 };
 #undef DEFINE_ACTION
 
+/*
+ * 从红黑色节点中获取消息对象
+ */
 static struct msg *
 msg_from_rbe(struct rbnode *node)
 {
@@ -135,6 +139,9 @@ msg_from_rbe(struct rbnode *node)
     return msg;
 }
 
+/*
+ * 获取红黑树中值最小的节点
+ */
 struct msg *
 msg_tmo_min(void)
 {
@@ -148,6 +155,9 @@ msg_tmo_min(void)
     return msg_from_rbe(node);
 }
 
+/*
+ * 将消息节点插入红黑树
+ */
 void
 msg_tmo_insert(struct msg *msg, struct conn *conn)
 {
@@ -172,6 +182,9 @@ msg_tmo_insert(struct msg *msg, struct conn *conn)
               "%d msec", msg->id, timeout);
 }
 
+/*
+ * 从红黑树中删除指定的消息节点
+ */
 void
 msg_tmo_delete(struct msg *msg)
 {
@@ -190,6 +203,9 @@ msg_tmo_delete(struct msg *msg)
     log_debug(LOG_VERB, "delete msg %"PRIu64" from tmo rbt", msg->id);
 }
 
+/*
+ * 获取一个空闲的消息
+ */
 static struct msg *
 _msg_get(void)
 {
@@ -211,27 +227,27 @@ _msg_get(void)
 
 done:
     /* c_tqe, s_tqe, and m_tqe are left uninitialized */
-    msg->id = ++msg_id;
-    msg->peer = NULL;
-    msg->owner = NULL;
+    msg->id     = ++msg_id;
+    msg->peer   = NULL;
+    msg->owner  = NULL;
 
     rbtree_node_init(&msg->tmo_rbe);
 
     STAILQ_INIT(&msg->mhdr);
-    msg->mlen = 0;
-    msg->start_ts = 0;
+    msg->mlen       = 0;
+    msg->start_ts   = 0;
 
-    msg->state = 0;
-    msg->pos = NULL;
-    msg->token = NULL;
+    msg->state      = 0;
+    msg->pos        = NULL;
+    msg->token      = NULL;
 
-    msg->parser = NULL;
-    msg->add_auth = NULL;
-    msg->result = MSG_PARSE_OK;
+    msg->parser     = NULL;
+    msg->add_auth   = NULL;
+    msg->result     = MSG_PARSE_OK;
 
-    msg->fragment = NULL;
-    msg->reply = NULL;
-    msg->pre_coalesce = NULL;
+    msg->fragment   = NULL;
+    msg->reply      = NULL;
+    msg->pre_coalesce  = NULL;
     msg->post_coalesce = NULL;
 
     msg->type = MSG_UNKNOWN;
@@ -242,37 +258,40 @@ done:
         return NULL;
     }
 
-    msg->vlen = 0;
-    msg->end = NULL;
+    msg->vlen   = 0;
+    msg->end    = NULL;
 
     msg->frag_owner = NULL;
-    msg->frag_seq = NULL;
-    msg->nfrag = 0;
+    msg->frag_seq   = NULL;
+    msg->nfrag      = 0;
     msg->nfrag_done = 0;
-    msg->frag_id = 0;
+    msg->frag_id    = 0;
 
     msg->narg_start = NULL;
-    msg->narg_end = NULL;
-    msg->narg = 0;
-    msg->rnarg = 0;
-    msg->rlen = 0;
-    msg->integer = 0;
+    msg->narg_end   = NULL;
+    msg->narg       = 0;
+    msg->rnarg      = 0;
+    msg->rlen       = 0;
+    msg->integer    = 0;
 
-    msg->err = 0;
-    msg->error = 0;
-    msg->ferror = 0;
-    msg->request = 0;
-    msg->quit = 0;
-    msg->noreply = 0;
-    msg->noforward = 0;
-    msg->done = 0;
-    msg->fdone = 0;
-    msg->swallow = 0;
-    msg->redis = 0;
+    msg->err        = 0;
+    msg->error      = 0;
+    msg->ferror     = 0;
+    msg->request    = 0;
+    msg->quit       = 0;
+    msg->noreply    = 0;
+    msg->noforward  = 0;
+    msg->done       = 0;
+    msg->fdone      = 0;
+    msg->swallow    = 0;
+    msg->redis      = 0;
 
     return msg;
 }
 
+/*
+ * 获取一个 msg 对象,并指明消息是否为请求，请求类型是为redis或者mc
+ */
 struct msg *
 msg_get(struct conn *conn, bool request, bool redis)
 {
@@ -283,33 +302,34 @@ msg_get(struct conn *conn, bool request, bool redis)
         return NULL;
     }
 
-    msg->owner = conn;
-    msg->request = request ? 1 : 0;
-    msg->redis = redis ? 1 : 0;
+    msg->owner      = conn;
+    msg->request    = request ? 1 : 0;
+    msg->redis      = redis ? 1 : 0;
 
+    /* redis协议 */
     if (redis) {
         if (request) {
             msg->parser = redis_parse_req;
         } else {
             msg->parser = redis_parse_rsp;
         }
-        msg->add_auth = redis_add_auth;
-        msg->fragment = redis_fragment;
-        msg->reply = redis_reply;
-        msg->failure = redis_failure;
-        msg->pre_coalesce = redis_pre_coalesce;
-        msg->post_coalesce = redis_post_coalesce;
-    } else {
+        msg->add_auth       = redis_add_auth;
+        msg->fragment       = redis_fragment;
+        msg->reply          = redis_reply;
+        msg->failure        = redis_failure;
+        msg->pre_coalesce   = redis_pre_coalesce;
+        msg->post_coalesce  = redis_post_coalesce;
+    } else {                // MC 协议
         if (request) {
             msg->parser = memcache_parse_req;
         } else {
             msg->parser = memcache_parse_rsp;
         }
-        msg->add_auth = memcache_add_auth;
-        msg->fragment = memcache_fragment;
-        msg->failure = memcache_failure;
-        msg->pre_coalesce = memcache_pre_coalesce;
-        msg->post_coalesce = memcache_post_coalesce;
+        msg->add_auth       = memcache_add_auth;
+        msg->fragment       = memcache_fragment;
+        msg->failure        = memcache_failure;
+        msg->pre_coalesce   = memcache_pre_coalesce;
+        msg->post_coalesce  = memcache_post_coalesce;
     }
 
     if (log_loggable(LOG_NOTICE) != 0) {
@@ -322,6 +342,9 @@ msg_get(struct conn *conn, bool request, bool redis)
     return msg;
 }
 
+/*
+ * 根据错误码获取错误信息
+ */
 struct msg *
 msg_get_error(bool redis, err_t err)
 {
@@ -356,6 +379,9 @@ msg_get_error(bool redis, err_t err)
     return msg;
 }
 
+/*
+ * 释放指定的消息结构体
+ */
 static void
 msg_free(struct msg *msg)
 {
@@ -365,6 +391,9 @@ msg_free(struct msg *msg)
     nc_free(msg);
 }
 
+/*
+ * 将指定的消息放入空闲消息列表中
+ */
 void
 msg_put(struct msg *msg)
 {
@@ -391,6 +420,9 @@ msg_put(struct msg *msg)
     TAILQ_INSERT_HEAD(&free_msgq, msg, m_tqe);
 }
 
+/*
+ * 打印出 msg 消息
+ */
 void
 msg_dump(struct msg *msg, int level)
 {
@@ -416,17 +448,23 @@ msg_dump(struct msg *msg, int level)
     }
 }
 
+/*
+ * 初始化 msg 信息
+ */
 void
 msg_init(void)
 {
     log_debug(LOG_DEBUG, "msg size %d", sizeof(struct msg));
-    msg_id = 0;
-    frag_id = 0;
-    nfree_msgq = 0;
+    msg_id      = 0;
+    frag_id     = 0;
+    nfree_msgq  = 0;
     TAILQ_INIT(&free_msgq);
     rbtree_init(&tmo_rbt, &tmo_rbs);
 }
 
+/*
+ * 销毁 msg 信息
+ */
 void
 msg_deinit(void)
 {
@@ -441,18 +479,27 @@ msg_deinit(void)
     ASSERT(nfree_msgq == 0);
 }
 
+/*
+ * 返回指定类型的名称
+ */
 struct string *
 msg_type_string(msg_type_t type)
 {
     return &msg_type_strings[type];
 }
 
+/*
+ * 检测 msg 中数据是否为空
+ */
 bool
 msg_empty(struct msg *msg)
 {
     return msg->mlen == 0 ? true : false;
 }
 
+/*
+ * 根据 key 返回后端 svr 的 id
+ */
 uint32_t
 msg_backend_idx(struct msg *msg, uint8_t *key, uint32_t keylen)
 {
@@ -462,6 +509,10 @@ msg_backend_idx(struct msg *msg, uint8_t *key, uint32_t keylen)
     return server_pool_idx(pool, key, keylen);
 }
 
+/*
+ * 确保 msg 中的 buf 可以存储下长度为 len 的数据
+ * 如果 mbuf 空闲空间不够则获取一个新的 mbuf 并返回
+ */
 struct mbuf *
 msg_ensure_mbuf(struct msg *msg, size_t len)
 {
@@ -484,6 +535,9 @@ msg_ensure_mbuf(struct msg *msg, size_t len)
 /*
  * Append n bytes of data, with n <= mbuf_size(mbuf)
  * into mbuf
+ */
+/*
+ * 追加长度为 n 的数据至 msg 中
  */
 rstatus_t
 msg_append(struct msg *msg, uint8_t *pos, size_t n)
@@ -509,6 +563,9 @@ msg_append(struct msg *msg, uint8_t *pos, size_t n)
  * Prepend n bytes of data, with n <= mbuf_size(mbuf)
  * into mbuf
  */
+/*
+ * 在 msg 头部添加长度为 n 的数据
+ */
 rstatus_t
 msg_prepend(struct msg *msg, uint8_t *pos, size_t n)
 {
@@ -532,6 +589,9 @@ msg_prepend(struct msg *msg, uint8_t *pos, size_t n)
 /*
  * Prepend a formatted string into msg. Returns an error if the formatted
  * string does not fit in a single mbuf.
+ */
+/*
+ * 在 msg 头部添加格式化的数据
  */
 rstatus_t
 msg_prepend_format(struct msg *msg, const char *fmt, ...)
@@ -562,12 +622,18 @@ msg_prepend_format(struct msg *msg, const char *fmt, ...)
     return NC_OK;
 }
 
+/*
+ * 返回分片 id
+ */
 inline uint64_t
 msg_gen_frag_id(void)
 {
     return ++frag_id;
 }
 
+/*
+ * 数据已经解析完毕，处理已解析的数据的 msg
+ */
 static rstatus_t
 msg_parsed(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -609,6 +675,9 @@ msg_parsed(struct context *ctx, struct conn *conn, struct msg *msg)
     return NC_OK;
 }
 
+/*
+ * 修复协议数据
+ */
 static rstatus_t
 msg_repair(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -624,6 +693,9 @@ msg_repair(struct context *ctx, struct conn *conn, struct msg *msg)
     return NC_OK;
 }
 
+/*
+ * 解析协议数据
+ */
 static rstatus_t
 msg_parse(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -659,6 +731,9 @@ msg_parse(struct context *ctx, struct conn *conn, struct msg *msg)
     return conn->err != 0 ? NC_ERROR : status;
 }
 
+/*
+ * 接收数据链
+ */
 static rstatus_t
 msg_recv_chain(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -712,6 +787,10 @@ msg_recv_chain(struct context *ctx, struct conn *conn, struct msg *msg)
     return NC_OK;
 }
 
+/*
+ * 接收数据的回调
+ * 根据不同类型的 conn 的不同接收接口来接收数据
+ */
 rstatus_t
 msg_recv(struct context *ctx, struct conn *conn)
 {
@@ -736,6 +815,9 @@ msg_recv(struct context *ctx, struct conn *conn)
     return NC_OK;
 }
 
+/*
+ * 发送数据
+ */
 static rstatus_t
 msg_send_chain(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -863,6 +945,9 @@ msg_send_chain(struct context *ctx, struct conn *conn, struct msg *msg)
     return (n == NC_EAGAIN) ? NC_OK : NC_ERROR;
 }
 
+/*
+ * 发送数据
+ */
 rstatus_t
 msg_send(struct context *ctx, struct conn *conn)
 {

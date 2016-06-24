@@ -128,8 +128,11 @@ struct context {
     int                max_timeout; /* max timeout in msec */
     int                timeout;     /* timeout in msec */
 
+    /* 最大的文件句柄数 */
     uint32_t           max_nfd;     /* max # files */
+    /* 最大的客户端链接数 */
     uint32_t           max_ncconn;  /* max # client connections */
+    /* 最大的svr链接数 */
     uint32_t           max_nsconn;  /* max # server connections */
 };
 

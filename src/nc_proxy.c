@@ -22,6 +22,9 @@
 #include <nc_server.h>
 #include <nc_proxy.h>
 
+/*
+ * 代理加引用,设置该代理的所属的 server_pool
+ */
 void
 proxy_ref(struct conn *conn, void *owner)
 {
@@ -43,6 +46,9 @@ proxy_ref(struct conn *conn, void *owner)
               pool, pool->idx);
 }
 
+/*
+ * 代理解引用
+ */
 void
 proxy_unref(struct conn *conn)
 {
@@ -60,6 +66,9 @@ proxy_unref(struct conn *conn)
               pool, pool->idx);
 }
 
+/*
+ * 关闭代理(proxy)链接句柄
+ */
 void
 proxy_close(struct context *ctx, struct conn *conn)
 {
@@ -89,6 +98,9 @@ proxy_close(struct context *ctx, struct conn *conn)
     conn_put(conn);
 }
 
+/*
+ * 设置端口复用
+ */
 static rstatus_t
 proxy_reuse(struct conn *p)
 {
@@ -120,6 +132,9 @@ proxy_reuse(struct conn *p)
     return status;
 }
 
+/*
+ * 监听端口
+ */
 static rstatus_t
 proxy_listen(struct context *ctx, struct conn *p)
 {
@@ -142,6 +157,7 @@ proxy_listen(struct context *ctx, struct conn *p)
         return NC_ERROR;
     }
 
+    /* 绑定地址 */
     status = bind(p->sd, p->addr, p->addrlen);
     if (status < 0) {
         log_error("bind on p %d to addr '%.*s' failed: %s", p->sd,
@@ -158,7 +174,7 @@ proxy_listen(struct context *ctx, struct conn *p)
             return NC_ERROR;
         }
     }
-
+    /* 监听端口 */
     status = listen(p->sd, pool->backlog);
     if (status < 0) {
         log_error("listen on p %d on addr '%.*s' failed: %s", p->sd,
@@ -192,6 +208,9 @@ proxy_listen(struct context *ctx, struct conn *p)
     return NC_OK;
 }
 
+/*
+ * 初始化指定代理(proxy)节点，开始监听端口
+ */
 rstatus_t
 proxy_each_init(void *elem, void *data)
 {
@@ -219,6 +238,9 @@ proxy_each_init(void *elem, void *data)
     return NC_OK;
 }
 
+/*
+ * 初始化代理(proxy)节点，开始监听端口
+ */
 rstatus_t
 proxy_init(struct context *ctx)
 {
@@ -238,6 +260,9 @@ proxy_init(struct context *ctx)
     return NC_OK;
 }
 
+/*
+ * 销毁指定的代理(proxy)链接节点
+ */
 rstatus_t
 proxy_each_deinit(void *elem, void *data)
 {
@@ -252,6 +277,9 @@ proxy_each_deinit(void *elem, void *data)
     return NC_OK;
 }
 
+/*
+ * 销毁代理(proxy)链接节点
+ */
 void
 proxy_deinit(struct context *ctx)
 {
@@ -268,6 +296,9 @@ proxy_deinit(struct context *ctx)
               array_n(&ctx->pool));
 }
 
+/*
+ * 接收新链接
+ */
 static rstatus_t
 proxy_accept(struct context *ctx, struct conn *p)
 {
@@ -326,6 +357,7 @@ proxy_accept(struct context *ctx, struct conn *p)
         break;
     }
 
+    /* 链接超过限制 */
     if (conn_ncurr_cconn() >= ctx->max_ncconn) {
         log_debug(LOG_CRIT, "client connections %"PRIu32" exceed limit %"PRIu32,
                   conn_ncurr_cconn(), ctx->max_ncconn);
@@ -336,6 +368,7 @@ proxy_accept(struct context *ctx, struct conn *p)
         return NC_OK;
     }
 
+    /* 获取链接 conn 结构体 */
     c = conn_get(p->owner, true, p->redis);
     if (c == NULL) {
         log_error("get conn for c %d from p %d failed: %s", sd, p->sd,
@@ -388,6 +421,9 @@ proxy_accept(struct context *ctx, struct conn *p)
     return NC_OK;
 }
 
+/*
+ * proxy 监听，接收新链接
+ */
 rstatus_t
 proxy_recv(struct context *ctx, struct conn *conn)
 {

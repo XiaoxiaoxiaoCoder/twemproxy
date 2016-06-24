@@ -19,6 +19,9 @@
 #include <nc_server.h>
 #include <nc_client.h>
 
+/*
+ * 客户端加引用,并设置该客户端所属的 server_pool
+ */
 void
 client_ref(struct conn *conn, void *owner)
 {
@@ -46,6 +49,9 @@ client_ref(struct conn *conn, void *owner)
               pool->name.len, pool->name.data);
 }
 
+/*
+ * 客户端解引用
+ */
 void
 client_unref(struct conn *conn)
 {
@@ -65,6 +71,9 @@ client_unref(struct conn *conn)
               pool, pool->name.len, pool->name.data);
 }
 
+/*
+ * 检测客户端是否活跃
+ */
 bool
 client_active(struct conn *conn)
 {
@@ -92,6 +101,9 @@ client_active(struct conn *conn)
     return false;
 }
 
+/*
+ * 统计客户端关闭状态
+ */
 static void
 client_close_stats(struct context *ctx, struct server_pool *pool, err_t err,
                    unsigned eof)
@@ -119,6 +131,9 @@ client_close_stats(struct context *ctx, struct server_pool *pool, err_t err,
     }
 }
 
+/*
+ * 关闭客户端链接
+ */
 void
 client_close(struct context *ctx, struct conn *conn)
 {

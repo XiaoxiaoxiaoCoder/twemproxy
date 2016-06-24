@@ -38,8 +38,13 @@ typedef void (*conn_msgq_t)(struct context *, struct conn *, struct msg *);
 typedef void (*conn_post_connect_t)(struct context *ctx, struct conn *, struct server *server);
 typedef void (*conn_swallow_msg_t)(struct conn *, struct msg *, struct msg *);
 
+/*
+ * conn 结构体
+ */
 struct conn {
+    /* 指向链表中下一节点 */
     TAILQ_ENTRY(conn)   conn_tqe;        /* link in server_pool / server / free q */
+    /* 该链接所属的 server_pool 或 server */
     void                *owner;          /* connection owner - server_pool / server */
 
     int                 sd;              /* socket descriptor */
@@ -47,17 +52,23 @@ struct conn {
     socklen_t           addrlen;         /* socket length */
     struct sockaddr     *addr;           /* socket address (ref in server or server_pool) */
 
+    /* input msg 队列 */
     struct msg_tqh      imsg_q;          /* incoming request Q */
+    /* Out msg 队列 */
     struct msg_tqh      omsg_q;          /* outstanding request Q */
+    /* 当前接收数据的 msg */
     struct msg          *rmsg;           /* current message being rcvd */
+    /* 当前发送数据的 msg */
     struct msg          *smsg;           /* current message being sent */
 
     conn_recv_t         recv;            /* recv (read) handler */
     conn_recv_next_t    recv_next;       /* recv next message handler */
     conn_recv_done_t    recv_done;       /* read done handler */
+
     conn_send_t         send;            /* send (write) handler */
     conn_send_next_t    send_next;       /* write next message handler */
     conn_send_done_t    send_done;       /* write done handler */
+
     conn_close_t        close;           /* close handler */
     conn_active_t       active;          /* active? handler */
     conn_post_connect_t post_connect;    /* post connect handler */
