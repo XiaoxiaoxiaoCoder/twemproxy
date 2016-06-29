@@ -226,7 +226,9 @@ struct msg {
 
     /* 当前解析数据的状态 */
     int                  state;           /* current parser state */
+    /* 当前解析数据的位置 */
     uint8_t              *pos;            /* parser position marker */
+    /* 当前解析的token标记 */
     uint8_t              *token;          /* token marker */
 
     msg_parse_t          parser;          /* message parser */
@@ -240,6 +242,7 @@ struct msg {
     msg_coalesce_t       pre_coalesce;    /* message pre-coalesce */
     msg_coalesce_t       post_coalesce;   /* message post-coalesce */
 
+    /* 命令类型 */
     msg_type_t           type;            /* message type */
 
     struct array         *keys;           /* array of keypos, for req */
@@ -249,14 +252,20 @@ struct msg {
 
     uint8_t              *narg_start;     /* narg start (redis) */
     uint8_t              *narg_end;       /* narg end (redis) */
+    /* 协议参数个数 */
     uint32_t             narg;            /* # arguments (redis) */
+    /* 剩余解析的参数个数 */
     uint32_t             rnarg;           /* running # arg used by parsing fsa (redis) */
     uint32_t             rlen;            /* running length in parsing fsa (redis) */
     uint32_t             integer;         /* integer reply value (redis) */
 
+    /* 该分片所属的 msg */
     struct msg           *frag_owner;     /* owner of fragment message */
+    /* 分片数 */
     uint32_t             nfrag;           /* # fragment */
+    /* 已经完成的分片请求数 */
     uint32_t             nfrag_done;      /* # fragment done */
+    /* 分片 ID */
     uint64_t             frag_id;         /* id of fragmented message */
     struct msg           **frag_seq;      /* sequence of fragment message, map from keys to fragments*/
 
@@ -265,9 +274,13 @@ struct msg {
     unsigned             ferror:1;        /* one or more fragments are in error? */
     unsigned             request:1;       /* request? or response? */
     unsigned             quit:1;          /* quit request? */
+    /* 不需要回复 */
     unsigned             noreply:1;       /* noreply? */
+    /* 不需要发送至后端 */
     unsigned             noforward:1;     /* not need forward (example: ping) */
+    /* 请求是否已经完成 */
     unsigned             done:1;          /* done? */
+    /* 所有分片是已经完成 */
     unsigned             fdone:1;         /* all fragments are done? */
     unsigned             swallow:1;       /* swallow response? */
     unsigned             redis:1;         /* redis? */

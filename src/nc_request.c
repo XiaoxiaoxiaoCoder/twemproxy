@@ -18,6 +18,9 @@
 #include <nc_core.h>
 #include <nc_server.h>
 
+/*
+ * 根据连接 conn 获取一个 msg
+ */
 struct msg *
 req_get(struct conn *conn)
 {
@@ -32,6 +35,9 @@ req_get(struct conn *conn)
     return msg;
 }
 
+/*
+ * 用日志记录 msg 信息
+ */
 static void
 req_log(struct msg *req)
 {
@@ -96,6 +102,9 @@ req_log(struct msg *req)
               kpos->start, peer_str, req->done, req->error);
 }
 
+/*
+ * 将请求 msg 加入至空闲 msg 列表中
+ */
 void
 req_put(struct msg *msg)
 {
@@ -125,6 +134,9 @@ req_put(struct msg *msg)
  * A request vector is done if we received responses for all its
  * fragments.
  */
+/*
+ * 检查请求是否完成，如果完成则返回 true, 否则返回 NULL
+ */
 bool
 req_done(struct conn *conn, struct msg *msg)
 {
@@ -139,11 +151,13 @@ req_done(struct conn *conn, struct msg *msg)
         return false;
     }
 
+    /* 检查是否有没有分片，如果没有分片则请求已经完成 */
     id = msg->frag_id;
     if (id == 0) {
         return true;
     }
 
+    /* 分片请求是否标记为已经完成 */
     if (msg->fdone) {
         /* request has already been marked as done */
         return true;
@@ -215,6 +229,9 @@ req_done(struct conn *conn, struct msg *msg)
  * A request is in error, if there was an error in receiving response for the
  * given request. A multiget request is in error if there was an error in
  * receiving response for any its fragments.
+ */
+/*
+ * 检查请求是否出错，如果出错则返回 true, 否则返回 NULL
  */
 bool
 req_error(struct conn *conn, struct msg *msg)
@@ -291,6 +308,10 @@ ferror:
     return true;
 }
 
+/*
+ * 将请求 msg 加入链接 conn 请求队列中尾
+ * 该 conn 链接为与后端 svr 的链接
+ */
 void
 req_server_enqueue_imsgq(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -315,6 +336,10 @@ req_server_enqueue_imsgq(struct context *ctx, struct conn *conn, struct msg *msg
     stats_server_incr_by(ctx, conn->owner, in_queue_bytes, msg->mlen);
 }
 
+/*
+ * 将请求 msg 加入链接 conn 请求队列中头部
+ * 该 conn 链接为与后端 svr 的链接
+ */
 void
 req_server_enqueue_imsgq_head(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -339,6 +364,10 @@ req_server_enqueue_imsgq_head(struct context *ctx, struct conn *conn, struct msg
     stats_server_incr_by(ctx, conn->owner, in_queue_bytes, msg->mlen);
 }
 
+/*
+ * 将请求 msg 从链接 conn 的请求队列中删除
+ * 该 conn 链接为与后端 svr 的链接
+ */
 void
 req_server_dequeue_imsgq(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -351,6 +380,10 @@ req_server_dequeue_imsgq(struct context *ctx, struct conn *conn, struct msg *msg
     stats_server_decr_by(ctx, conn->owner, in_queue_bytes, msg->mlen);
 }
 
+/*
+ * 将回复 msg 加入链接 conn 回复队列中
+ * 该 conn 链接为客户端与该代理的链接
+ */
 void
 req_client_enqueue_omsgq(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -360,6 +393,10 @@ req_client_enqueue_omsgq(struct context *ctx, struct conn *conn, struct msg *msg
     TAILQ_INSERT_TAIL(&conn->omsg_q, msg, c_tqe);
 }
 
+/*
+ * 将回复 msg 加入链接 conn 回复队列中
+ * 该 conn 链接为与后端 svr 的链接
+ */
 void
 req_server_enqueue_omsgq(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -372,6 +409,10 @@ req_server_enqueue_omsgq(struct context *ctx, struct conn *conn, struct msg *msg
     stats_server_incr_by(ctx, conn->owner, out_queue_bytes, msg->mlen);
 }
 
+/*
+ * 将 msg 从链接 conn 的发送队列中删除
+ * 该 conn 为客户端与该代理的链接
+ */
 void
 req_client_dequeue_omsgq(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -381,6 +422,10 @@ req_client_dequeue_omsgq(struct context *ctx, struct conn *conn, struct msg *msg
     TAILQ_REMOVE(&conn->omsg_q, msg, c_tqe);
 }
 
+/*
+ * 将 msg 从链接 conn 的发送队列中删除
+ * 该 conn 为与后端 svr 的链接
+ */
 void
 req_server_dequeue_omsgq(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -454,6 +499,9 @@ req_recv_next(struct context *ctx, struct conn *conn, bool alloc)
     return msg;
 }
 
+/*
+ * 给请求 msg 创建一个回复 msg
+ */
 static rstatus_t
 req_make_reply(struct context *ctx, struct conn *conn, struct msg *req)
 {
@@ -475,6 +523,9 @@ req_make_reply(struct context *ctx, struct conn *conn, struct msg *req)
     return NC_OK;
 }
 
+/*
+ * 过滤请求信息
+ */
 static bool
 req_filter(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -493,6 +544,7 @@ req_filter(struct context *ctx, struct conn *conn, struct msg *msg)
      * is the protocol way of doing a passive close. The connection is closed
      * as soon as all pending replies have been written to the client.
      */
+    /* 处理退出请求 */
     if (msg->quit) {
         log_debug(LOG_INFO, "filter quit req %"PRIu64" from c %d", msg->id,
                   conn->sd);
@@ -518,6 +570,9 @@ req_filter(struct context *ctx, struct conn *conn, struct msg *msg)
     return false;
 }
 
+/*
+ * 处理请求发送错误
+ */
 static void
 req_forward_error(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -529,9 +584,9 @@ req_forward_error(struct context *ctx, struct conn *conn, struct msg *msg)
               "c %d failed: %s", msg->id, msg->mlen, msg->type, conn->sd,
               strerror(errno));
 
-    msg->done = 1;
-    msg->error = 1;
-    msg->err = errno;
+    msg->done   = 1;
+    msg->error  = 1;
+    msg->err    = errno;
 
     /* noreply request don't expect any response */
     if (msg->noreply) {
@@ -547,6 +602,9 @@ req_forward_error(struct context *ctx, struct conn *conn, struct msg *msg)
     }
 }
 
+/*
+ * 向前发送统计
+ */
 static void
 req_forward_stats(struct context *ctx, struct server *server, struct msg *msg)
 {
@@ -556,15 +614,18 @@ req_forward_stats(struct context *ctx, struct server *server, struct msg *msg)
     stats_server_incr_by(ctx, server, request_bytes, msg->mlen);
 }
 
+/*
+ * 将请求发送至后端 svr
+ */
 static void
 req_forward(struct context *ctx, struct conn *c_conn, struct msg *msg)
 {
-    rstatus_t status;
-    struct conn *s_conn;
-    struct server_pool *pool;
-    uint8_t *key;
-    uint32_t keylen;
-    struct keypos *kpos;
+    rstatus_t               status;
+    struct conn             *s_conn;
+    struct server_pool      *pool;
+    uint8_t                 *key;
+    uint32_t                keylen;
+    struct keypos           *kpos;
 
     ASSERT(c_conn->client && !c_conn->proxy);
 
@@ -576,9 +637,9 @@ req_forward(struct context *ctx, struct conn *c_conn, struct msg *msg)
     pool = c_conn->owner;
 
     ASSERT(array_n(msg->keys) > 0);
-    kpos = array_get(msg->keys, 0);
-    key = kpos->start;
-    keylen = (uint32_t)(kpos->end - kpos->start);
+    kpos    = array_get(msg->keys, 0);
+    key     = kpos->start;
+    keylen  = (uint32_t)(kpos->end - kpos->start);
 
     s_conn = server_pool_conn(ctx, c_conn->owner, key, keylen);
     if (s_conn == NULL) {
@@ -588,6 +649,7 @@ req_forward(struct context *ctx, struct conn *c_conn, struct msg *msg)
     ASSERT(!s_conn->client && !s_conn->proxy);
 
     /* enqueue the message (request) into server inq */
+    /* server 请求队列为空，则需要添加写事件 */
     if (TAILQ_EMPTY(&s_conn->imsg_q)) {
         status = event_add_out(ctx->evb, s_conn);
         if (status != NC_OK) {
@@ -605,7 +667,7 @@ req_forward(struct context *ctx, struct conn *c_conn, struct msg *msg)
             return;
         }
     }
-
+    /* 将请求添加至请求队列中 */
     s_conn->enqueue_inq(ctx, s_conn, msg);
 
     req_forward_stats(ctx, s_conn->owner, msg);
@@ -615,6 +677,9 @@ req_forward(struct context *ctx, struct conn *c_conn, struct msg *msg)
               msg->mlen, msg->type, keylen, key);
 }
 
+/*
+ *　接收一条完整的协议数据结束，接下来怎么处理？
+ */
 void
 req_recv_done(struct context *ctx, struct conn *conn, struct msg *msg,
               struct msg *nmsg)
@@ -632,12 +697,13 @@ req_recv_done(struct context *ctx, struct conn *conn, struct msg *msg,
     ASSERT(nmsg == NULL || nmsg->request);
 
     /* enqueue next message (request), if any */
+    /* 有协议数据需要继续接收 */
     conn->rmsg = nmsg;
 
     if (req_filter(ctx, conn, msg)) {
         return;
     }
-
+    /* 不需要发送至后端 */
     if (msg->noforward) {
         status = req_make_reply(ctx, conn, msg);
         if (status != NC_OK) {
@@ -660,6 +726,7 @@ req_recv_done(struct context *ctx, struct conn *conn, struct msg *msg,
     }
 
     /* do fragment */
+    /* 进行分片操作，不一定需要分片 */
     pool = conn->owner;
     TAILQ_INIT(&frag_msgq);
     status = msg->fragment(msg, pool->ncontinuum, &frag_msgq);
@@ -695,6 +762,9 @@ req_recv_done(struct context *ctx, struct conn *conn, struct msg *msg,
     return;
 }
 
+/*
+ * 获取当前发送数据的 msg
+ */
 struct msg *
 req_send_next(struct context *ctx, struct conn *conn)
 {
@@ -738,6 +808,9 @@ req_send_next(struct context *ctx, struct conn *conn)
     return nmsg;
 }
 
+/*
+ * 数据发送 OK
+ */
 void
 req_send_done(struct context *ctx, struct conn *conn, struct msg *msg)
 {

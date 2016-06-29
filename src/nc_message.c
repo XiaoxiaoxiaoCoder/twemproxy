@@ -641,6 +641,7 @@ msg_parsed(struct context *ctx, struct conn *conn, struct msg *msg)
     struct mbuf *mbuf, *nbuf;
 
     mbuf = STAILQ_LAST(&msg->mhdr, mbuf, next);
+    /* 没有更多数据了，即说明当前msg只有一条完整的协议数据，不需要进行切割 */
     if (msg->pos == mbuf->last) {
         /* no more data to parse */
         conn->recv_done(ctx, conn, msg, NULL);
@@ -652,6 +653,10 @@ msg_parsed(struct context *ctx, struct conn *conn, struct msg *msg)
      * into (mbuf, nbuf), where mbuf is the portion of the message that has
      * been parsed and nbuf is the portion of the message that is un-parsed.
      * Parse nbuf as a new message nmsg in the next iteration.
+     */
+    /*
+     * 切割数据，将完整的协议数据保存在当前 msg 中
+     * 下一条协议的数据用一个新的 mbuf 存储并保存至一个新的 msg 
      */
     nbuf = mbuf_split(&msg->mhdr, msg->pos, NULL, NULL);
     if (nbuf == NULL) {
@@ -676,7 +681,8 @@ msg_parsed(struct context *ctx, struct conn *conn, struct msg *msg)
 }
 
 /*
- * 修复协议数据
+ * msg 中的数据不完整，且解析token过程中，mbuf已经没有空闲空间接收数据
+ * 此时需要用一个新的 mbuf 存储解析过程中的 token 并继续接收数据
  */
 static rstatus_t
 msg_repair(struct context *ctx, struct conn *conn, struct msg *msg)

@@ -39,6 +39,9 @@ static rstatus_t redis_handle_auth_req(struct msg *request, struct msg *response
  * Return true, if the redis command take no key, otherwise
  * return false
  */
+/*
+ * 检查 redis 命令是否不需要key，如果不需要 key, 则返回 true，否则返回 false
+ */
 static bool
 redis_argz(struct msg *r)
 {
@@ -57,6 +60,9 @@ redis_argz(struct msg *r)
 /*
  * Return true, if the redis command accepts no arguments, otherwise
  * return false
+ */
+/*
+ * 检查 redis 命令是否不需要参数，是就返回 true，否则返回 NULL
  */
 static bool
 redis_arg0(struct msg *r)
@@ -103,6 +109,9 @@ redis_arg0(struct msg *r)
  * Return true, if the redis command accepts exactly 1 argument, otherwise
  * return false
  */
+/*
+ * 检查 redis 命令是否只需要1个参数，是则返回 true，否则返回 NULL
+ */
 static bool
 redis_arg1(struct msg *r)
 {
@@ -146,6 +155,9 @@ redis_arg1(struct msg *r)
  * Return true, if the redis command accepts exactly 2 arguments, otherwise
  * return false
  */
+/*
+ * 检查 redis 命令是否只需要2个参数，是则返回 true，否则返回 NULL
+ */
 static bool
 redis_arg2(struct msg *r)
 {
@@ -188,6 +200,9 @@ redis_arg2(struct msg *r)
 /*
  * Return true, if the redis command accepts exactly 3 arguments, otherwise
  * return false
+ */
+/*
+ * 检查 redis 命令是否只需要3个参数，是则返回 true，否则返回 NULL
  */
 static bool
 redis_arg3(struct msg *r)
@@ -262,6 +277,9 @@ redis_argn(struct msg *r)
  * Return true, if the redis command is a vector command accepting one or
  * more keys, otherwise return false
  */
+/*
+ * 检查 redis 命令是否只需要N个参数，是则返回 true，否则返回 NULL
+ */
 static bool
 redis_argx(struct msg *r)
 {
@@ -280,6 +298,9 @@ redis_argx(struct msg *r)
 /*
  * Return true, if the redis command is a vector command accepting one or
  * more key-value pairs, otherwise return false
+ */
+/*
+ * 检查 redis 命令是否需要一个或多个 key-value 参数
  */
 static bool
 redis_argkvx(struct msg *r)
@@ -319,6 +340,9 @@ redis_argeval(struct msg *r)
 /*
  * Return true, if the redis response is an error response i.e. a simple
  * string whose first character is '-', otherwise return false.
+ */
+/*
+ * 检查 redis 回复是否是错误回复，是则返回 true，否则返回 NULL
  */
 static bool
 redis_error(struct msg *r)
@@ -370,6 +394,9 @@ redis_error(struct msg *r)
  *     a binary-safe last argument.
  *
  * Nutcracker only supports the Redis unified protocol for requests.
+ */
+/*
+ * 解析 Redis 请求协议
  */
 void
 redis_parse_req(struct msg *r)
@@ -1641,11 +1668,13 @@ redis_parse_req(struct msg *r)
     r->pos = p;
     r->state = state;
 
+    /* 解析token数据不完整，需要继续,但是呢，当前 mbuf 已经没有空闲空间接收数据了 */
     if (b->last == b->end && r->token != NULL) {
         r->pos = r->token;
         r->token = NULL;
         r->result = MSG_PARSE_REPAIR;
     } else {
+        /* 解析token完成了，但是协议数据不完整，需要继续接收数据继续解析 */
         r->result = MSG_PARSE_AGAIN;
     }
 
@@ -1655,6 +1684,7 @@ redis_parse_req(struct msg *r)
     return;
 
 done:
+    /* 协议数据解析完毕 */
     ASSERT(r->type > MSG_UNKNOWN && r->type < MSG_SENTINEL);
     r->pos = p + 1;
     ASSERT(r->pos <= b->last);
@@ -1713,6 +1743,9 @@ error:
  * 5). Multi-bulk reply is used by the server to return many binary safe
  *     strings (bulks) with the initial line indicating how many bulks that
  *     will follow. The first byte of a multi bulk reply is always *.
+ */
+/*
+ * 解析回复
  */
 void
 redis_parse_rsp(struct msg *r)
@@ -2263,6 +2296,9 @@ error:
  *
  * See issue: https://github.com/twitter/twemproxy/issues/369
  */
+/*
+ * 检查 redis 回复是否为一个临时的错误回复, 是则返回 true, 否则返回 false
+ */
 bool
 redis_failure(struct msg *r)
 {
@@ -2296,6 +2332,7 @@ redis_copy_bulk(struct msg *dst, struct msg *src)
     uint32_t bytes = 0;
     rstatus_t status;
 
+    /* 去掉空闲的 mbuf */
     for (mbuf = STAILQ_FIRST(&src->mhdr);
          mbuf && mbuf_empty(mbuf);
          mbuf = STAILQ_FIRST(&src->mhdr)) {
@@ -2313,6 +2350,7 @@ redis_copy_bulk(struct msg *dst, struct msg *src)
     ASSERT(*p == '$');
     p++;
 
+    /* 获取数据长度 */
     if (p[0] == '-' && p[1] == '1') {
         len = 1 + 2 + CRLF_LEN;             /* $-1\r\n */
         p = mbuf->pos + len;
@@ -2327,6 +2365,7 @@ redis_copy_bulk(struct msg *dst, struct msg *src)
     bytes = len;
 
     /* copy len bytes to dst */
+    /* 拷贝长度为 len 的数据至 dst 中 */
     for (; mbuf;) {
         if (mbuf_length(mbuf) <= len) {     /* steal this buf from src to dst */
             nbuf = STAILQ_NEXT(mbuf, next);
