@@ -245,12 +245,15 @@ struct msg {
     /* 命令类型 */
     msg_type_t           type;            /* message type */
 
+    /* keys 集合 */
     struct array         *keys;           /* array of keypos, for req */
 
     uint32_t             vlen;            /* value length (memcache) */
     uint8_t              *end;            /* end marker (memcache) */
 
+    /* 参数开始地址 */
     uint8_t              *narg_start;     /* narg start (redis) */
+    /* 参数截止地址 */
     uint8_t              *narg_end;       /* narg end (redis) */
     /* 协议参数个数 */
     uint32_t             narg;            /* # arguments (redis) */
@@ -267,6 +270,7 @@ struct msg {
     uint32_t             nfrag_done;      /* # fragment done */
     /* 分片 ID */
     uint64_t             frag_id;         /* id of fragmented message */
+    /* 分片消息的队列 */
     struct msg           **frag_seq;      /* sequence of fragment message, map from keys to fragments*/
 
     err_t                err;             /* errno on error? */

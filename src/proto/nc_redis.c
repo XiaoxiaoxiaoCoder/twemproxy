@@ -2400,6 +2400,9 @@ redis_copy_bulk(struct msg *dst, struct msg *src)
  * the fragmented multi vector request - 'mget' or 'del' and all the
  * responses to the fragmented request vector hasn't been received
  */
+/*
+ * 该函数调用是用来准备合并分片请求的回复
+ */
 void
 redis_pre_coalesce(struct msg *r)
 {
@@ -2480,6 +2483,9 @@ redis_pre_coalesce(struct msg *r)
     }
 }
 
+/*
+ * 添加一个 key 数据至 msg 中
+ */
 static rstatus_t
 redis_append_key(struct msg *r, uint8_t *key, uint32_t keylen)
 {
@@ -2489,6 +2495,7 @@ redis_append_key(struct msg *r, uint8_t *key, uint32_t keylen)
     struct keypos *kpos;
 
     /* 1. keylen */
+    /* key 的长度*/
     len = (uint32_t)nc_snprintf(printbuf, sizeof(printbuf), "$%d\r\n", keylen);
     mbuf = msg_ensure_mbuf(r, len);
     if (mbuf == NULL) {
@@ -2498,6 +2505,7 @@ redis_append_key(struct msg *r, uint8_t *key, uint32_t keylen)
     r->mlen += len;
 
     /* 2. key */
+    /* 写入 key */
     mbuf = msg_ensure_mbuf(r, keylen);
     if (mbuf == NULL) {
         return NC_ENOMEM;
@@ -2576,6 +2584,9 @@ redis_append_key(struct msg *r, uint8_t *key, uint32_t keylen)
  *                     ------------------------------------------+
  *
  */
+/*
+ * 将请求命令进行分片
+ */
 static rstatus_t
 redis_fragment_argx(struct msg *r, uint32_t ncontinuum, struct msg_tqh *frag_msgq,
                     uint32_t key_step)
@@ -2619,6 +2630,7 @@ redis_fragment_argx(struct msg *r, uint32_t ncontinuum, struct msg_tqh *frag_msg
     r->nfrag = 0;
     r->frag_owner = r;
 
+    /* 处理每个key */
     for (i = 0; i < array_n(r->keys); i++) {        /* for each key */
         struct msg *sub_msg;
         struct keypos *kpos = array_get(r->keys, i);
@@ -2659,6 +2671,7 @@ redis_fragment_argx(struct msg *r, uint32_t ncontinuum, struct msg_tqh *frag_msg
         }
     }
 
+    /* 在消息头添加命令 */
     for (i = 0; i < ncontinuum; i++) {     /* prepend mget header, and forward it */
         struct msg *sub_msg = sub_msgs[i];
         if (sub_msg == NULL) {
@@ -2682,8 +2695,8 @@ redis_fragment_argx(struct msg *r, uint32_t ncontinuum, struct msg_tqh *frag_msg
             return status;
         }
 
-        sub_msg->type = r->type;
-        sub_msg->frag_id = r->frag_id;
+        sub_msg->type       = r->type;
+        sub_msg->frag_id    = r->frag_id;
         sub_msg->frag_owner = r->frag_owner;
 
         TAILQ_INSERT_TAIL(frag_msgq, sub_msg, m_tqe);
@@ -2694,6 +2707,9 @@ redis_fragment_argx(struct msg *r, uint32_t ncontinuum, struct msg_tqh *frag_msg
     return NC_OK;
 }
 
+/*
+ * 进行分片
+ */
 rstatus_t
 redis_fragment(struct msg *r, uint32_t ncontinuum, struct msg_tqh *frag_msgq)
 {
@@ -2714,6 +2730,9 @@ redis_fragment(struct msg *r, uint32_t ncontinuum, struct msg_tqh *frag_msgq)
     }
 }
 
+/*
+ * 构造回复
+ */
 rstatus_t
 redis_reply(struct msg *r)
 {
@@ -2741,6 +2760,9 @@ redis_reply(struct msg *r)
     }
 }
 
+/*
+ * 合并 MSET 命令
+ */
 void
 redis_post_coalesce_mset(struct msg *request)
 {
@@ -2754,6 +2776,9 @@ redis_post_coalesce_mset(struct msg *request)
     }
 }
 
+/*
+ * 合并 DEL 命令
+ */
 void
 redis_post_coalesce_del(struct msg *request)
 {
@@ -2767,6 +2792,9 @@ redis_post_coalesce_del(struct msg *request)
     }
 }
 
+/*
+ * 合并 MGET 命令
+ */
 static void
 redis_post_coalesce_mget(struct msg *request)
 {
@@ -2805,6 +2833,9 @@ redis_post_coalesce_mget(struct msg *request)
  * responses to the fragmented request vector has been received and
  * the fragmented request is consider to be done
  */
+/*
+ * 分片请求的回复全部接收到了，进行合并
+ */
 void
 redis_post_coalesce(struct msg *r)
 {
@@ -2832,6 +2863,9 @@ redis_post_coalesce(struct msg *r)
     }
 }
 
+/*
+ * 处理身份验证请求
+ */
 static rstatus_t
 redis_handle_auth_req(struct msg *req, struct msg *rsp)
 {
@@ -2854,10 +2888,10 @@ redis_handle_auth_req(struct msg *req, struct msg *rsp)
         return msg_append(rsp, rsp_no_password.data, rsp_no_password.len);
     }
 
-    kpos = array_get(req->keys, 0);
-    key = kpos->start;
-    keylen = (uint32_t)(kpos->end - kpos->start);
-    valid = (keylen == pool->redis_auth.len) &&
+    kpos    = array_get(req->keys, 0);
+    key     = kpos->start;
+    keylen  = (uint32_t)(kpos->end - kpos->start);
+    valid   = (keylen == pool->redis_auth.len) &&
             (memcmp(pool->redis_auth.data, key, keylen) == 0) ? true : false;
     if (valid) {
         conn->authenticated = 1;
@@ -2875,6 +2909,9 @@ redis_handle_auth_req(struct msg *req, struct msg *rsp)
     return msg_append(rsp, rsp_invalid_password.data, rsp_invalid_password.len);
 }
 
+/*
+ * 添加身份验证命令
+ */
 rstatus_t
 redis_add_auth(struct context *ctx, struct conn *c_conn, struct conn *s_conn)
 {
@@ -2907,6 +2944,9 @@ redis_add_auth(struct context *ctx, struct conn *c_conn, struct conn *s_conn)
     return NC_OK;
 }
 
+/*
+ * 链接后端 Svr
+ */
 void
 redis_post_connect(struct context *ctx, struct conn *conn, struct server *server)
 {
@@ -2944,10 +2984,10 @@ redis_post_connect(struct context *ctx, struct conn *conn, struct server *server
         msg_put(msg);
         return;
     }
-    msg->type = MSG_REQ_REDIS_SELECT;
-    msg->result = MSG_PARSE_OK;
-    msg->swallow = 1;
-    msg->owner = NULL;
+    msg->type       = MSG_REQ_REDIS_SELECT;
+    msg->result     = MSG_PARSE_OK;
+    msg->swallow    = 1;
+    msg->owner      = NULL;
 
     /* enqueue as head and send */
     req_server_enqueue_imsgq_head(ctx, conn, msg);
@@ -2957,6 +2997,9 @@ redis_post_connect(struct context *ctx, struct conn *conn, struct server *server
               pool->name.data, server->name.data);
 }
 
+/*
+ *
+ */
 void
 redis_swallow_msg(struct conn *conn, struct msg *pmsg, struct msg *msg)
 {
