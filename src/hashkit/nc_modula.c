@@ -45,10 +45,10 @@ modula_update(struct server_pool *pool)
         return NC_ERROR;
     }
 
-    nserver = array_n(&pool->server);
-    nlive_server = 0;
-    total_weight = 0;
-    pool->next_rebuild = 0LL;
+    nserver             = array_n(&pool->server);
+    nlive_server        = 0;
+    total_weight        = 0;
+    pool->next_rebuild  = 0LL;
 
     for (server_index = 0; server_index < nserver; server_index++) {
         struct server *server = array_get(&pool->server, server_index);

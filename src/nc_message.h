@@ -234,11 +234,16 @@ struct msg {
     msg_parse_t          parser;          /* message parser */
     msg_parse_result_t   result;          /* message parsing result */
 
+    /* 进行消息分片的函数 */
     msg_fragment_t       fragment;        /* message fragment */
+    /* 构造消息回复的函数 */
     msg_reply_t          reply;           /* generate message reply (example: ping) */
+    /* 添加身份验证的函数 */
     msg_add_auth_t       add_auth;        /* add auth message when we forward msg */
+    /* 后端Svr暂时性错误处理的函数 */
     msg_failure_t        failure;         /* transient failure response? */
 
+    /* 准备合并回复消息的函数 */
     msg_coalesce_t       pre_coalesce;    /* message pre-coalesce */
     msg_coalesce_t       post_coalesce;   /* message post-coalesce */
 

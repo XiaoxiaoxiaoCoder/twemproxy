@@ -151,16 +151,16 @@ conf_server_deinit(struct conf_server *cs)
 rstatus_t
 conf_server_each_transform(void *elem, void *data)
 {
-    struct conf_server *cs = elem;
-    struct array *server = data;
-    struct server *s;
+    struct conf_server  *cs     = elem;
+    struct array        *server = data;
+    struct server       *s;
 
     ASSERT(cs->valid);
 
     s = array_push(server);
     ASSERT(s != NULL);
 
-    s->idx = array_idx(server, s);
+    s->idx   = array_idx(server, s);
     s->owner = NULL;
 
     s->pname    = cs->pname;

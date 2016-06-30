@@ -34,11 +34,14 @@ server_resolve(struct server *server, struct conn *conn)
         return;
     }
 
-    conn->family = server->info.family;
-    conn->addrlen = server->info.addrlen;
-    conn->addr = (struct sockaddr *)&server->info.addr;
+    conn->family    = server->info.family;
+    conn->addrlen   = server->info.addrlen;
+    conn->addr      = (struct sockaddr *)&server->info.addr;
 }
 
+/*
+ * server 加引用
+ */
 void
 server_ref(struct conn *conn, void *owner)
 {
@@ -58,6 +61,9 @@ server_ref(struct conn *conn, void *owner)
               server->pname.len, server->pname.data);
 }
 
+/*
+ * server 减引用
+ */
 void
 server_unref(struct conn *conn)
 {
@@ -77,6 +83,9 @@ server_unref(struct conn *conn)
               server->pname.len, server->pname.data);
 }
 
+/*
+ * 返回与后端 Svr 链接的超时时间
+ */
 int
 server_timeout(struct conn *conn)
 {
@@ -86,7 +95,7 @@ server_timeout(struct conn *conn)
     ASSERT(!conn->client && !conn->proxy);
 
     server = conn->owner;
-    pool = server->owner;
+    pool   = server->owner;
 
     return pool->timeout;
 }
@@ -130,8 +139,8 @@ server_active(struct conn *conn)
 static rstatus_t
 server_each_set_owner(void *elem, void *data)
 {
-    struct server *s = elem;
-    struct server_pool *sp = data;
+    struct server       *s  = elem;
+    struct server_pool  *sp = data;
 
     s->owner = sp;
 
@@ -197,6 +206,7 @@ server_deinit(struct array *server)
 
 /*
  * 返回指定 server 的一个链接 conn
+ * 如果一个 Server 有多条链接，则采用轮询的方式
  */
 struct conn *
 server_conn(struct server *server)
@@ -269,7 +279,7 @@ server_each_disconnect(void *elem, void *data)
     struct server_pool *pool;
 
     server = elem;
-    pool = server->owner;
+    pool   = server->owner;
 
     while (!TAILQ_EMPTY(&server->s_conn_q)) {
         struct conn *conn;
@@ -283,6 +293,9 @@ server_each_disconnect(void *elem, void *data)
     return NC_OK;
 }
 
+/*
+ * 处理 Svr 故障
+ */
 static void
 server_failure(struct context *ctx, struct server *server)
 {
@@ -330,6 +343,9 @@ server_failure(struct context *ctx, struct server *server)
     }
 }
 
+/*
+ * svr 关闭数据统计
+ */
 static void
 server_close_stats(struct context *ctx, struct server *server, err_t err,
                    unsigned eof, unsigned connected)
@@ -362,6 +378,9 @@ server_close_stats(struct context *ctx, struct server *server, err_t err,
     }
 }
 
+/*
+ * 关闭一个 svr 链接
+ */
 void
 server_close(struct context *ctx, struct conn *conn)
 {
@@ -382,7 +401,8 @@ server_close(struct context *ctx, struct conn *conn)
         conn_put(conn);
         return;
     }
-
+    
+    /* 处理还未来及发送或处理的数据 */
     for (msg = TAILQ_FIRST(&conn->imsg_q); msg != NULL; msg = nmsg) {
         nmsg = TAILQ_NEXT(msg, s_tqe);
 
@@ -569,6 +589,9 @@ error:
     return status;
 }
 
+/*
+ * 链接上后端 Svr
+ */
 void
 server_connected(struct context *ctx, struct conn *conn)
 {
@@ -735,6 +758,9 @@ server_pool_server(struct server_pool *pool, uint8_t *key, uint32_t keylen)
     return server;
 }
 
+/*
+ * 根据指定的 key，选择一个 svr 并链接该 svr
+ */
 struct conn *
 server_pool_conn(struct context *ctx, struct server_pool *pool, uint8_t *key,
                  uint32_t keylen)

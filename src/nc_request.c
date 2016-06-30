@@ -658,7 +658,7 @@ req_forward(struct context *ctx, struct conn *c_conn, struct msg *msg)
             return;
         }
     }
-
+    /* 是否需要添加身份验证 */
     if (!conn_authenticated(s_conn)) {
         status = msg->add_auth(ctx, c_conn, s_conn);
         if (status != NC_OK) {
@@ -679,16 +679,18 @@ req_forward(struct context *ctx, struct conn *c_conn, struct msg *msg)
 
 /*
  *　接收一条完整的协议数据结束，接下来怎么处理？
+ *  msg:  当前完整协议数据 
+ *  nmsg: 如果不为NULL,则为下一条协议数据
  */
 void
 req_recv_done(struct context *ctx, struct conn *conn, struct msg *msg,
               struct msg *nmsg)
 {
-    rstatus_t status;
-    struct server_pool *pool;
-    struct msg_tqh frag_msgq;
-    struct msg *sub_msg;
-    struct msg *tmsg; 			/* tmp next message */
+    rstatus_t           status;
+    struct server_pool  *pool;
+    struct msg_tqh      frag_msgq;
+    struct msg          *sub_msg;
+    struct msg          *tmsg; 			/* tmp next message */
 
     ASSERT(conn->client && !conn->proxy);
     ASSERT(msg->request);
@@ -700,6 +702,7 @@ req_recv_done(struct context *ctx, struct conn *conn, struct msg *msg,
     /* 有协议数据需要继续接收 */
     conn->rmsg = nmsg;
 
+    /* 过滤协议数据 */
     if (req_filter(ctx, conn, msg)) {
         return;
     }
@@ -738,6 +741,7 @@ req_recv_done(struct context *ctx, struct conn *conn, struct msg *msg,
     }
 
     /* if no fragment happened */
+    /* 没有进行分片，直接发送消息后端svr */
     if (TAILQ_EMPTY(&frag_msgq)) {
         req_forward(ctx, conn, msg);
         return;

@@ -2661,7 +2661,7 @@ redis_fragment_argx(struct msg *r, uint32_t ncontinuum, struct msg_tqh *frag_msg
                 return status;
             }
 
-            status = redis_copy_bulk(sub_msg, r);
+            status = redis_copy_bulk(sub_msg, r);       /* key 后的其他参数 */
             if (status != NC_OK) {
                 nc_free(sub_msgs);
                 return status;
@@ -2750,7 +2750,7 @@ redis_reply(struct msg *r)
         return msg_append(response, rsp_auth_required.data, rsp_auth_required.len);
     }
 
-    switch (r->type) {
+    switch (r->type) {casshong
     case MSG_REQ_REDIS_PING:
         return msg_append(response, rsp_pong.data, rsp_pong.len);
 
