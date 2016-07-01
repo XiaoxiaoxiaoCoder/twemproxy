@@ -18,6 +18,10 @@
 #include <nc_core.h>
 #include <nc_server.h>
 
+/*
+ * 根据 conn 获取 msg
+ * 该 conn 为
+ */
 struct msg *
 rsp_get(struct conn *conn)
 {
@@ -33,6 +37,9 @@ rsp_get(struct conn *conn)
     return msg;
 }
 
+/*
+ * 将 msg 放入 msg 空闲队列中
+ */
 void
 rsp_put(struct msg *msg)
 {
@@ -83,6 +90,11 @@ rsp_make_error(struct context *ctx, struct conn *conn, struct msg *msg)
     return msg_get_error(conn->redis, err);
 }
 
+/*
+ * 获取接收回复的数据的 msg
+ * conn 为与后端 svr 链接
+ * alloc 决定是否需要创建新的 msg
+ */
 struct msg *
 rsp_recv_next(struct context *ctx, struct conn *conn, bool alloc)
 {
@@ -138,6 +150,9 @@ rsp_recv_next(struct context *ctx, struct conn *conn, bool alloc)
     return msg;
 }
 
+/*
+ * 过滤请求
+ */
 static bool
 rsp_filter(struct context *ctx, struct conn *conn, struct msg *msg)
 {
@@ -192,6 +207,7 @@ rsp_filter(struct context *ctx, struct conn *conn, struct msg *msg)
      * If auto_eject_host is enabled, this will also update the failure_count
      * and eject the server if it exceeds the failure_limit
      */
+    /* 检查回复的数据是否是错误信息，如果是则进行特殊处理 */
     if (msg->failure(msg)) {
         log_debug(LOG_INFO, "server failure rsp %"PRIu64" len %"PRIu32" "
                   "type %d on s %d", msg->id, msg->mlen, msg->type, conn->sd);
@@ -230,6 +246,10 @@ rsp_forward_stats(struct context *ctx, struct server *server, struct msg *msg, u
     stats_server_incr_by(ctx, server, response_bytes, msgsize);
 }
 
+/*
+ * 将回复发送至客户端
+ * conn 为与后端 Svr 的链接， msg 为完整的数据
+ */
 static void
 rsp_forward(struct context *ctx, struct conn *s_conn, struct msg *msg)
 {
@@ -254,8 +274,10 @@ rsp_forward(struct context *ctx, struct conn *s_conn, struct msg *msg)
 
     /* establish msg <-> pmsg (response <-> request) link */
     pmsg->peer = msg;
-    msg->peer = pmsg;
+    msg->peer  = pmsg;
 
+    /* 可能需要合并回复 */
+    /* 这里会将 msg 中的数据清空掉，数据整合至了所属 msg 中 */
     msg->pre_coalesce(msg);
 
     c_conn = pmsg->owner;
@@ -271,6 +293,10 @@ rsp_forward(struct context *ctx, struct conn *s_conn, struct msg *msg)
     rsp_forward_stats(ctx, s_conn->owner, msg, msgsize);
 }
 
+/*
+ * 回复接收完毕，处理回复
+ * conn 为与后端 Svr 的链接， msg 为完整的回复数据， nmsg 为可能存在的下一条回复的数据
+ */
 void
 rsp_recv_done(struct context *ctx, struct conn *conn, struct msg *msg,
               struct msg *nmsg)

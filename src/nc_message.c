@@ -823,6 +823,7 @@ msg_recv(struct context *ctx, struct conn *conn)
 
 /*
  * 发送数据
+ * conn 为与后端svr的链接， msg 为需要发送的数据
  */
 static rstatus_t
 msg_send_chain(struct context *ctx, struct conn *conn, struct msg *msg)
@@ -901,7 +902,7 @@ msg_send_chain(struct context *ctx, struct conn *conn, struct msg *msg)
     nsent = n > 0 ? (size_t)n : 0;
 
     /* postprocess - process sent messages in send_msgq */
-
+    /* 处理已发送数据的 msg 中 mbuf 的数据 */
     for (msg = TAILQ_FIRST(&send_msgq); msg != NULL; msg = nmsg) {
         nmsg = TAILQ_NEXT(msg, m_tqe);
 
@@ -953,6 +954,7 @@ msg_send_chain(struct context *ctx, struct conn *conn, struct msg *msg)
 
 /*
  * 发送数据
+ * conn 为与后端的链接
  */
 rstatus_t
 msg_send(struct context *ctx, struct conn *conn)

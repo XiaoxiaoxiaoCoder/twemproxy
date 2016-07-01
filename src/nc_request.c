@@ -768,6 +768,7 @@ req_recv_done(struct context *ctx, struct conn *conn, struct msg *msg,
 
 /*
  * 获取当前发送数据的 msg
+ * conn 为与后端Svr 的链接，获取可以发送的协议数据的 msg
  */
 struct msg *
 req_send_next(struct context *ctx, struct conn *conn)
@@ -814,6 +815,7 @@ req_send_next(struct context *ctx, struct conn *conn)
 
 /*
  * 数据发送 OK
+ * conn 为与后端 svr 的链接， msg 为已经发送完毕的协议数据
  */
 void
 req_send_done(struct context *ctx, struct conn *conn, struct msg *msg)
