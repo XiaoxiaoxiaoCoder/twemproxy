@@ -253,10 +253,10 @@ rsp_forward_stats(struct context *ctx, struct server *server, struct msg *msg, u
 static void
 rsp_forward(struct context *ctx, struct conn *s_conn, struct msg *msg)
 {
-    rstatus_t status;
-    struct msg *pmsg;
+    rstatus_t   status;
+    struct msg  *pmsg;
     struct conn *c_conn;
-    uint32_t msgsize;
+    uint32_t    msgsize;
 
     ASSERT(!s_conn->client && !s_conn->proxy);
     msgsize = msg->mlen;
@@ -283,6 +283,7 @@ rsp_forward(struct context *ctx, struct conn *s_conn, struct msg *msg)
     c_conn = pmsg->owner;
     ASSERT(c_conn->client && !c_conn->proxy);
 
+    /* 如果 client 请求数据队列中的头部数据没回复，依旧等待 */
     if (req_done(c_conn, TAILQ_FIRST(&c_conn->omsg_q))) {
         status = event_add_out(ctx->evb, c_conn);
         if (status != NC_OK) {

@@ -33,9 +33,9 @@ proxy_ref(struct conn *conn, void *owner)
     ASSERT(!conn->client && conn->proxy);
     ASSERT(conn->owner == NULL);
 
-    conn->family = pool->info.family;
+    conn->family  = pool->info.family;
     conn->addrlen = pool->info.addrlen;
-    conn->addr = (struct sockaddr *)&pool->info.addr;
+    conn->addr    = (struct sockaddr *)&pool->info.addr;
 
     pool->p_conn = conn;
 

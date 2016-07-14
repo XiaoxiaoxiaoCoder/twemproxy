@@ -153,20 +153,20 @@ _conn_get(void)
     conn->send_bytes = 0;
     conn->recv_bytes = 0;
 
-    conn->events = 0;
-    conn->err = 0;
-    conn->recv_active = 0;
-    conn->recv_ready = 0;
-    conn->send_active = 0;
-    conn->send_ready = 0;
+    conn->events        = 0;
+    conn->err           = 0;
+    conn->recv_active   = 0;
+    conn->recv_ready    = 0;
+    conn->send_active   = 0;
+    conn->send_ready    = 0;
 
-    conn->client = 0;
-    conn->proxy = 0;
-    conn->connecting = 0;
-    conn->connected = 0;
-    conn->eof = 0;
-    conn->done = 0;
-    conn->redis = 0;
+    conn->client        = 0;
+    conn->proxy         = 0;
+    conn->connecting    = 0;
+    conn->connected     = 0;
+    conn->eof           = 0;
+    conn->done          = 0;
+    conn->redis         = 0;
     conn->authenticated = 0;
 
     ntotal_conn++;
@@ -198,26 +198,26 @@ conn_get(void *owner, bool client, bool redis)
          * client receives a request, possibly parsing it, and sends a
          * response downstream.
          */
-        conn->recv = msg_recv;
+        conn->recv      = msg_recv;
         conn->recv_next = req_recv_next;
         conn->recv_done = req_recv_done;
 
-        conn->send = msg_send;
+        conn->send      = msg_send;
         conn->send_next = rsp_send_next;
         conn->send_done = rsp_send_done;
 
-        conn->close = client_close;
-        conn->active = client_active;
+        conn->close     = client_close;
+        conn->active    = client_active;
 
-        conn->ref = client_ref;
-        conn->unref = client_unref;
+        conn->ref       = client_ref;
+        conn->unref     = client_unref;
 
-        conn->enqueue_inq = NULL;
-        conn->dequeue_inq = NULL;
+        conn->enqueue_inq  = NULL;
+        conn->dequeue_inq  = NULL;
         conn->enqueue_outq = req_client_enqueue_omsgq;
         conn->dequeue_outq = req_client_dequeue_omsgq;
         conn->post_connect = NULL;
-        conn->swallow_msg = NULL;
+        conn->swallow_msg  = NULL;
 
         ncurr_cconn++;
     } else {
@@ -225,30 +225,30 @@ conn_get(void *owner, bool client, bool redis)
          * server receives a response, possibly parsing it, and sends a
          * request upstream.
          */
-        conn->recv = msg_recv;
+        conn->recv      = msg_recv;
         conn->recv_next = rsp_recv_next;
         conn->recv_done = rsp_recv_done;
 
-        conn->send = msg_send;
+        conn->send      = msg_send;
         conn->send_next = req_send_next;
         conn->send_done = req_send_done;
 
-        conn->close = server_close;
-        conn->active = server_active;
+        conn->close     = server_close;
+        conn->active    = server_active;
 
-        conn->ref = server_ref;
-        conn->unref = server_unref;
+        conn->ref       = server_ref;
+        conn->unref     = server_unref;
 
-        conn->enqueue_inq = req_server_enqueue_imsgq;
-        conn->dequeue_inq = req_server_dequeue_imsgq;
+        conn->enqueue_inq  = req_server_enqueue_imsgq;
+        conn->dequeue_inq  = req_server_dequeue_imsgq;
         conn->enqueue_outq = req_server_enqueue_omsgq;
         conn->dequeue_outq = req_server_dequeue_omsgq;
         if (redis) {
           conn->post_connect = redis_post_connect;
-          conn->swallow_msg = redis_swallow_msg;
+          conn->swallow_msg  = redis_swallow_msg;
         } else {
           conn->post_connect = memcache_post_connect;
-          conn->swallow_msg = memcache_swallow_msg;
+          conn->swallow_msg  = memcache_swallow_msg;
         }
     }
 
@@ -276,22 +276,22 @@ conn_get_proxy(void *owner)
 
     conn->proxy = 1;
 
-    conn->recv = proxy_recv;
+    conn->recv      = proxy_recv;
     conn->recv_next = NULL;
     conn->recv_done = NULL;
 
-    conn->send = NULL;
+    conn->send      = NULL;
     conn->send_next = NULL;
     conn->send_done = NULL;
 
-    conn->close = proxy_close;
+    conn->close  = proxy_close;
     conn->active = NULL;
 
-    conn->ref = proxy_ref;
+    conn->ref   = proxy_ref;
     conn->unref = proxy_unref;
 
-    conn->enqueue_inq = NULL;
-    conn->dequeue_inq = NULL;
+    conn->enqueue_inq  = NULL;
+    conn->dequeue_inq  = NULL;
     conn->enqueue_outq = NULL;
     conn->dequeue_outq = NULL;
 
@@ -313,7 +313,8 @@ conn_free(struct conn *conn)
 }
 
 /*
- * 将指定的 conn 放入空闲队列中 */
+ * 将指定的 conn 放入空闲队列中 
+ */
 void
 conn_put(struct conn *conn)
 {
