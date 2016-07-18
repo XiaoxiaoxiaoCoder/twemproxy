@@ -22,6 +22,8 @@
 #include <nc_server.h>
 #include <nc_proxy.h>
 
+extern struct instance g_nci;
+
 static uint32_t ctx_id; /* context generation */
 
 /*
@@ -397,3 +399,49 @@ core_loop(struct context *ctx)
 
     return NC_OK;
 }
+
+/*
+ * 重载配置
+ */
+void
+core_reload_conf()
+{
+    log_debug(LOG_VVERB, "reload config");
+
+    /* 
+     * 1. 先保存旧的配置
+     * 2. 判断新配置是否正确 
+     * 3. 生效新配置,释放老配置空间
+     */
+    struct context* ctx = g_nci.ctx;
+    struct conf *old_cf = ctx->cf;
+
+    ctx->cf = conf_create(g_nci.conf_filename);
+    if( NULL == ctx->cf)
+    {
+        log_debug(LOG_ERR, "nutcracker: configuration file '%s' syntax is invalid", g_nci.conf_filename);
+        ctx->cf = old_cf;
+        return ;
+    }
+    /* 校验配置中的集群与现在生效的集群的公共配置是否一致 */
+    if( !server_pool_check_reload_conf(&ctx->pool, &ctx->cf->pool, ctx))
+    {
+        log_debug(LOG_ERR, "nutcracker: configuration file '%s' not same to old", g_nci.conf_filename);
+        conf_destroy(ctx->cf);
+        ctx->cf = old_cf;
+        return ;
+    }
+    /* 校验后端集群节点的svr配置是否完全一致,如果完全一致则不需要重新加载配置 */
+    if( server_pool_check_back_server_is_same(&ctx->pool, &ctx->cf->pool, ctx) )
+    {
+        log_debug(LOG_ERR, "nutcracker: configuration file '%s' servers config same to old", g_nci.conf_filename);
+        conf_destroy(ctx->cf);
+        ctx->cf = old_cf;
+        return;
+    }
+    conf_destroy(old_cf);
+}
+
+
+
+

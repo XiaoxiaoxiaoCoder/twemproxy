@@ -158,4 +158,10 @@ void server_pool_disconnect(struct context *ctx);
 rstatus_t server_pool_init(struct array *server_pool, struct array *conf_pool, struct context *ctx);
 void server_pool_deinit(struct array *server_pool);
 
+bool server_pool_check_reload_conf(struct array *server_pool, struct array *conf_pool, struct context *ctx);
+bool server_pool_check_one_pool_conf(struct server_pool *sp, struct conf_pool *cp);
+bool server_pool_check_back_server_is_same(struct array *server_pool, struct array *conf_pool, struct context *ctx);
+bool server_pool_check_one_back_server_is_same(struct server_pool *sp, struct conf_pool *cp);
+bool server_pool_check_one_server_is_same(struct server *s_svr, struct conf_server *c_svr);
+
 #endif

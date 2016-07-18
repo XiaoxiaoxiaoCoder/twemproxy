@@ -84,6 +84,8 @@ signal_handler(int signo)
 
     switch (signo) {
     case SIGUSR1:
+        actionstr = ", reload config";
+        action = core_reload_conf;
         break;
 
     case SIGUSR2:

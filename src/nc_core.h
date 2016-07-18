@@ -84,6 +84,8 @@ struct conf;
 struct stats;
 struct instance;
 struct event_base;
+struct conf_pool;
+struct conf_server;
 
 #include <stddef.h>
 #include <stdint.h>
@@ -157,5 +159,6 @@ struct context *core_start(struct instance *nci);
 void core_stop(struct context *ctx);
 rstatus_t core_core(void *arg, uint32_t events);
 rstatus_t core_loop(struct context *ctx);
+void core_reload_conf();
 
 #endif

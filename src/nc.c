@@ -45,6 +45,8 @@
 #define NC_MBUF_MIN_SIZE    MBUF_MIN_SIZE
 #define NC_MBUF_MAX_SIZE    MBUF_MAX_SIZE
 
+struct instance g_nci;
+
 static int show_help;
 static int show_version;
 static int test_conf;
@@ -540,11 +542,10 @@ int
 main(int argc, char **argv)
 {
     rstatus_t status;
-    struct instance nci;
 
-    nc_set_default_options(&nci);
+    nc_set_default_options(&g_nci);
 
-    status = nc_get_options(argc, argv, &nci);
+    status = nc_get_options(argc, argv, &g_nci);
     if (status != NC_OK) {
         nc_show_usage();
         exit(1);
@@ -564,21 +565,21 @@ main(int argc, char **argv)
     }
 
     if (test_conf) {
-        if (!nc_test_conf(&nci)) {
+        if (!nc_test_conf(&g_nci)) {
             exit(1);
         }
         exit(0);
     }
 
-    status = nc_pre_run(&nci);
+    status = nc_pre_run(&g_nci);
     if (status != NC_OK) {
-        nc_post_run(&nci);
+        nc_post_run(&g_nci);
         exit(1);
     }
 
-    nc_run(&nci);
+    nc_run(&g_nci);
 
-    nc_post_run(&nci);
+    nc_post_run(&g_nci);
 
     exit(1);
 }

@@ -2750,7 +2750,7 @@ redis_reply(struct msg *r)
         return msg_append(response, rsp_auth_required.data, rsp_auth_required.len);
     }
 
-    switch (r->type) {casshong
+    switch (r->type) {
     case MSG_REQ_REDIS_PING:
         return msg_append(response, rsp_pong.data, rsp_pong.len);
 

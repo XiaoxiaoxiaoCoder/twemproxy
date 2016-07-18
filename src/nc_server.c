@@ -161,6 +161,7 @@ server_init(struct array *server, struct array *conf_server,
     ASSERT(nserver != 0);
     ASSERT(array_n(server) == 0);
 
+    /* server 数量 */
     status = array_init(server, nserver, sizeof(struct server));
     if (status != NC_OK) {
         return status;
@@ -936,6 +937,7 @@ server_pool_init(struct array *server_pool, struct array *conf_pool,
     ASSERT(npool != 0);
     ASSERT(array_n(server_pool) == 0);
 
+    /* 初始化出 server_pool 的内存空间 */
     status = array_init(server_pool, npool, sizeof(struct server_pool));
     if (status != NC_OK) {
         return status;
@@ -1008,3 +1010,227 @@ server_pool_deinit(struct array *server_pool)
 
     log_debug(LOG_DEBUG, "deinit %"PRIu32" pools", npool);
 }
+
+/*
+ * 校验重读的配置与生效的server_pool配置是否一致
+ */
+bool
+server_pool_check_reload_conf(struct array *server_pools, struct array *conf_pools,
+                 struct context *ctx)
+{
+    uint32_t n_server_pool;
+    uint32_t n_conf_pool;
+    n_server_pool = array_n(server_pools);
+    n_conf_pool   = array_n(conf_pools);
+
+    log_debug(LOG_ERR, "server_pool(%d) n_conf_pool(%d) check!!", n_server_pool, n_conf_pool);
+
+    if( 0 == n_conf_pool)
+    {
+        log_debug(LOG_ERR, "conf_pool is 0 !!");
+        return false;
+    }
+    if( n_server_pool != n_conf_pool)
+    {
+        log_debug(LOG_ERR, "server_pool(%d) != n_conf_pool(%d) !!", n_server_pool, n_conf_pool);
+        return false;
+    }
+    uint32_t i;
+    for( i = 0; i < n_server_pool;  ++i)
+    {
+        struct server_pool *sp = array_get(server_pools, i);
+        struct conf_pool   *cp = array_get(conf_pools, i);
+        if( !server_pool_check_one_pool_conf(sp, cp))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+/*
+ * 校验配置与现行的pool公共配置是否相同
+ */
+bool
+server_pool_check_one_pool_conf(struct server_pool *sp, struct conf_pool *cp)
+{
+    if( string_compare(&sp->name, &cp->name))
+    {
+        log_debug(LOG_ERR, "sp_name[%s] cp_name[%s] !!", sp->name.data, cp->name.data);
+        return false;
+    }
+    if( string_compare(&sp->addrstr, &cp->listen.pname))
+    {
+        log_debug(LOG_ERR, "sp_addrstr[%s] cp_pname[%s] !!", sp->addrstr.data, cp->listen.pname.data);
+        return false;
+    }
+    if( sp->port != (uint16_t)cp->listen.port)
+    {
+        log_debug(LOG_ERR, "sp_port[%d] cp_port[%d] !!", sp->port, cp->listen.port);
+        return false;
+    }
+    if( memcmp(&sp->info, &cp->listen.info, sizeof(cp->listen.info)))
+    {
+        log_debug(LOG_ERR, "info is not same");
+        return false;
+    }
+    if( sp->perm != cp->listen.perm)
+    {
+        log_debug(LOG_ERR, "perm is not same");
+        return false;
+    }
+    if( sp->key_hash_type != cp->hash )
+    {
+        log_debug(LOG_ERR, "key_hash_type is not same");
+        return false;
+    }
+    if( sp->dist_type != cp->distribution)
+    {
+        log_debug(LOG_ERR, "dist_type is not same");
+        return false;
+    }
+    if( sp->tcpkeepalive != (cp->tcpkeepalive ? 1 : 0))
+    {
+        log_debug(LOG_ERR, "tcpkeepalive not same");
+        return false;
+    }
+    if( sp->redis != (cp->redis? 1 : 0))
+    {
+        log_debug(LOG_ERR, "redis not same");
+        return false;
+    }
+    if( sp->timeout != cp->timeout )
+    {
+        log_debug(LOG_ERR, "timeout not same");
+        return false;
+    }
+    if( sp->backlog != cp->backlog )
+    {
+        log_debug(LOG_ERR, "backlog sp[%d] cp[%d] not same", sp->backlog, cp->backlog);
+        return false;
+    }
+    if( sp->redis_db != cp->redis_db )
+    {
+        log_debug(LOG_ERR, "redis_db sp[%d] cp[%d] not same", sp->redis_db, cp->redis_db);
+        return false;
+    }
+    if( string_compare(&sp->redis_auth, &cp->redis_auth))
+    {
+        log_debug(LOG_ERR, "redis_auth sp[%s] cp[%s] not same", sp->redis_auth.data, cp->redis_auth.data);
+        return false;
+    }
+    if( sp->client_connections != (uint32_t)cp->client_connections)
+    {
+        log_debug(LOG_ERR, "client_connections sp[%d] cp[%d] not same", sp->client_connections, cp->client_connections);
+        return false;
+    }
+    if( sp->server_connections != (uint32_t)cp->server_connections)
+    {
+        log_debug(LOG_ERR, "server_connections sp[%d] cp[%d] not same", sp->server_connections, cp->server_connections);
+        return false;
+    }
+    if( sp->server_retry_timeout != (uint64_t)cp->server_retry_timeout * 1000LL)
+    {
+        log_debug(LOG_ERR, "server_retry_timeout sp[%lld] cp[%lld] not same", sp->server_retry_timeout, cp->server_retry_timeout*1000LL);
+        return false;
+    }
+    if( sp->server_failure_limit != (uint32_t)cp->server_failure_limit)
+    {
+        log_debug(LOG_ERR, "server_failure_limit sp[%d] cp[%d] not same", sp->server_failure_limit, cp->server_failure_limit);
+        return false;
+    }
+    if( sp->auto_eject_hosts != (cp->auto_eject_hosts ? 1 : 0))
+    {
+        log_debug(LOG_ERR, "auto_eject_host sp[%d] cp[%d] not same", sp->auto_eject_hosts, cp->auto_eject_hosts);
+        return false;
+    }
+    if( sp->preconnect != (cp->preconnect? 1 : 0))
+    {
+        log_debug(LOG_ERR, "preconnect sp[%d] cp[%d] not same", sp->preconnect, cp->preconnect);
+        return false;
+    }
+    if( array_n(&sp->server) != array_n(&cp->server))
+    {
+        log_debug(LOG_ERR, "servers sp[%d] cp[%d] not same", array_n(&sp->server), array_n(&cp->server));
+        return false;
+    }
+    log_debug(LOG_VERB, "config is same");
+    return true;
+}
+
+/*
+ * 校验后端的svr配置与现行的配置是否一致
+ */
+bool
+server_pool_check_back_server_is_same(struct array *server_pools, struct array *conf_pools,
+                 struct context *ctx)
+{
+    uint32_t n_server_pool;
+    uint32_t n_conf_pool;
+    n_server_pool = array_n(server_pools);
+    n_conf_pool   = array_n(conf_pools);
+    ASSERT(n_server_pool == n_conf_pool);
+    uint32_t i;
+    for( i = 0; i < n_server_pool;  ++i)
+    {
+        struct server_pool *sp = array_get(server_pools, i);
+        struct conf_pool   *cp = array_get(conf_pools, i);
+        if( !server_pool_check_one_back_server_is_same(sp, cp))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+/*
+ * 校验一个pool的后端svr配置是否相同
+ */
+bool
+server_pool_check_one_back_server_is_same(struct server_pool *sp, struct conf_pool *cp)
+{
+    uint32_t n_servers = array_n(&sp->server);
+    uint32_t i;
+    for( i = 0; i < n_servers; ++i)
+    {
+        struct server       *s_server = array_get(&sp->server, i);
+        struct conf_server  *c_server = array_get(&cp->server, i);
+        if(!server_pool_check_one_server_is_same(s_server, c_server))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool
+server_pool_check_one_server_is_same(struct server* s_svr, struct conf_server *c_svr)
+{
+    if( string_compare(&s_svr->pname, &c_svr->pname))
+    {
+        log_debug(LOG_ERR, "pname s_svr[%s] c_svr[%s] !!", s_svr->pname.data, c_svr->pname.data);
+        return false;
+    }
+    if( string_compare(&s_svr->name, &c_svr->name))
+    {
+        log_debug(LOG_ERR, "name s_svr[%s] c_svr[%s] !!", s_svr->name.data, c_svr->name.data);
+        return false;
+    }
+    if( string_compare(&s_svr->addrstr, &c_svr->addrstr))
+    {
+        log_debug(LOG_ERR, "addstr s_svr[%s] c_svr[%s] !!", s_svr->addrstr.data, c_svr->addrstr.data);
+        return false;
+    }
+    if( s_svr->port != (uint16_t)c_svr->port)
+    {
+        log_debug(LOG_ERR, "port s_svr[%d] c_svr[%d] !!", s_svr->port, c_svr->port);
+        return false;
+    }
+    if( s_svr->weight != (uint32_t)c_svr->weight)
+    {
+        log_debug(LOG_ERR, "weight s_svr[%d] c_svr[%d] !!", s_svr->weight, c_svr->weight);
+        return false;
+    }
+    return true;
+}
+
