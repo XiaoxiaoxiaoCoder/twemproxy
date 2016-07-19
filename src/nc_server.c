@@ -1203,6 +1203,9 @@ server_pool_check_one_back_server_is_same(struct server_pool *sp, struct conf_po
     return true;
 }
 
+/*
+ * 检验后端一个svr的配置是否相同
+ */
 bool
 server_pool_check_one_server_is_same(struct server* s_svr, struct conf_server *c_svr)
 {
@@ -1234,3 +1237,94 @@ server_pool_check_one_server_is_same(struct server* s_svr, struct conf_server *c
     return true;
 }
 
+/*
+ * 加载后端Svr配置
+ */
+void
+server_pool_reload_conf(struct array *server_pools, struct array *conf_pools,
+                 struct context *ctx)
+{
+    uint32_t n_server_pool;
+    uint32_t n_conf_pool;
+    n_server_pool = array_n(server_pools);
+    n_conf_pool   = array_n(conf_pools);
+    ASSERT(n_server_pool == n_conf_pool);
+    uint32_t i;
+    for( i = 0; i < n_server_pool;  ++i)
+    {
+        struct server_pool *sp = array_get(server_pools, i);
+        struct conf_pool   *cp = array_get(conf_pools, i);
+        sp->name    = cp->name;
+        sp->addrstr = cp->listen.pname;
+        server_pool_one_reload_conf(sp, cp, ctx);
+    }
+}
+
+/*
+ * 一个 svr_pool 加载后端 svr 配置
+ */
+void
+server_pool_one_reload_conf(struct server_pool *sp, struct conf_pool *cp, struct context *ctx)
+{
+    uint32_t n_servers = array_n(&sp->server);
+    uint32_t i;
+    for( i = 0; i < n_servers; ++i)
+    {
+        struct server       *s_server = array_get(&sp->server, i);
+        struct conf_server  *c_server = array_get(&cp->server, i);
+        s_server->pname   = c_server->pname;
+        s_server->name    = c_server->name;
+        s_server->addrstr = c_server->addrstr;
+        if( server_pool_check_one_server_is_same(s_server, c_server) ) 
+        {
+            continue;
+        }
+        //需要修改的配置，则该配置的后端svr已经出了问题
+        server_pool_svr_reload_conf(s_server, c_server, ctx);
+    }
+    server_pool_run(sp);
+}
+
+/*
+ * 后端一个 svr 加载配置
+ */
+void
+server_pool_svr_reload_conf(struct server *s_svr, struct conf_server *c_svr, struct context *ctx)
+{
+    /* 先断开原svr的链接 */
+    struct conn* conn;
+    struct server_pool *pool;
+    pool   = s_svr->owner;
+    while (!TAILQ_EMPTY(&s_svr->s_conn_q)) 
+    {
+       struct conn *conn;
+       ASSERT(s_svr->ns_conn_q > 0);
+       conn = TAILQ_FIRST(&s_svr->s_conn_q);
+       conn->close(pool->ctx, conn);
+    }
+    /* 加载最新的配置 */
+    s_svr->port   = (uint16_t)c_svr->port;
+    /*权重值不允许改，默认不生效*/
+    /*s_svr->weight = (uint32_t)c_svr->weight;*/
+    log_debug(LOG_INFO, "weight s_svr[%d] c_svr[%d] !!", s_svr->weight, c_svr->weight);
+
+    nc_memcpy(&s_svr->info, &c_svr->info, sizeof(c_svr->info));
+    s_svr->ns_conn_q = 0;
+    TAILQ_INIT(&s_svr->s_conn_q);
+
+    s_svr->next_retry    = 0LL;
+    s_svr->failure_count = 0;
+
+    /* 链接svr */
+    conn = server_conn(s_svr);
+    if (conn == NULL) {
+        return ;
+    }
+    rstatus_t status;
+    status = server_connect(pool->ctx, s_svr, conn);
+    if (status != NC_OK) {
+        log_warn("connect to server '%.*s' failed, ignored: %s",
+                 s_svr->pname.len, s_svr->pname.data, strerror(errno));
+        server_close(pool->ctx, conn);
+    }
+}

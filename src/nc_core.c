@@ -439,6 +439,10 @@ core_reload_conf()
         ctx->cf = old_cf;
         return;
     }
+    /* 生效新的后端 svr 配置 */
+    server_pool_reload_conf(&ctx->pool, &ctx->cf->pool, ctx);
+
+
     conf_destroy(old_cf);
 }
 
