@@ -72,6 +72,9 @@ static struct option long_options[] = {
 
 static char short_options[] = "hVtdDv:o:c:s:i:a:p:m:";
 
+/*
+ * 启动守护模式
+ */
 static rstatus_t
 nc_daemonize(int dump_core)
 {
@@ -174,6 +177,9 @@ nc_daemonize(int dump_core)
     return NC_OK;
 }
 
+/*
+ * 打印进程运行信息
+ */
 static void
 nc_print_run(struct instance *nci)
 {
@@ -200,6 +206,9 @@ nc_print_done(void)
     loga("done, rabbit done");
 }
 
+/*
+ * 展示启动参数信息
+ */
 static void
 nc_show_usage(void)
 {
@@ -233,6 +242,9 @@ nc_show_usage(void)
         NC_MBUF_SIZE);
 }
 
+/*
+ * 创建文件写入进程 ID
+ */
 static rstatus_t
 nc_create_pidfile(struct instance *nci)
 {
@@ -262,6 +274,9 @@ nc_create_pidfile(struct instance *nci)
     return NC_OK;
 }
 
+/*
+ * 删除进程 ID 文件
+ */
 static void
 nc_remove_pidfile(struct instance *nci)
 {
@@ -274,6 +289,9 @@ nc_remove_pidfile(struct instance *nci)
     }
 }
 
+/*
+ * 设置配置的选项配置
+ */
 static void
 nc_set_default_options(struct instance *nci)
 {
@@ -281,13 +299,13 @@ nc_set_default_options(struct instance *nci)
 
     nci->ctx = NULL;
 
-    nci->log_level = NC_LOG_DEFAULT;
-    nci->log_filename = NC_LOG_PATH;
+    nci->log_level      = NC_LOG_DEFAULT;
+    nci->log_filename   = NC_LOG_PATH;
 
-    nci->conf_filename = NC_CONF_PATH;
+    nci->conf_filename  = NC_CONF_PATH;
 
-    nci->stats_port = NC_STATS_PORT;
-    nci->stats_addr = NC_STATS_ADDR;
+    nci->stats_port     = NC_STATS_PORT;
+    nci->stats_addr     = NC_STATS_ADDR;
     nci->stats_interval = NC_STATS_INTERVAL;
 
     status = nc_gethostname(nci->hostname, NC_MAXHOSTNAMELEN);
@@ -299,11 +317,14 @@ nc_set_default_options(struct instance *nci)
 
     nci->mbuf_chunk_size = NC_MBUF_SIZE;
 
-    nci->pid = (pid_t)-1;
-    nci->pid_filename = NULL;
-    nci->pidfile = 0;
+    nci->pid            = (pid_t)-1;
+    nci->pid_filename   = NULL;
+    nci->pidfile        = 0;
 }
 
+/*
+ * 获取启动参数选项信息
+ */
 static rstatus_t
 nc_get_options(int argc, char **argv, struct instance *nci)
 {
@@ -447,6 +468,9 @@ nc_get_options(int argc, char **argv, struct instance *nci)
  * Returns true if configuration file has a valid syntax, otherwise
  * returns false
  */
+/*
+ * 检查指定配置文件的语法是否正确，正确返回 true，否则返回 false
+ */
 static bool
 nc_test_conf(struct instance *nci)
 {
@@ -466,6 +490,9 @@ nc_test_conf(struct instance *nci)
     return true;
 }
 
+/*
+ * 进行服务启动前的准备操作
+ */
 static rstatus_t
 nc_pre_run(struct instance *nci)
 {
@@ -502,6 +529,9 @@ nc_pre_run(struct instance *nci)
     return NC_OK;
 }
 
+/*
+ * 服务进程结束，收尾操作
+ */
 static void
 nc_post_run(struct instance *nci)
 {
@@ -516,6 +546,9 @@ nc_post_run(struct instance *nci)
     log_deinit();
 }
 
+/*
+ * 启动服务
+ */
 static void
 nc_run(struct instance *nci)
 {
