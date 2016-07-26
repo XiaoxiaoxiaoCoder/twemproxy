@@ -716,11 +716,11 @@ msg_parse(struct context *ctx, struct conn *conn, struct msg *msg)
     msg->parser(msg);
 
     switch (msg->result) {
-    case MSG_PARSE_OK:
+    case MSG_PARSE_OK:                              // 协议数据完整
         status = msg_parsed(ctx, conn, msg);
         break;
 
-    case MSG_PARSE_REPAIR:
+    case MSG_PARSE_REPAIR:                          // 协议数据不完整，需要继续接收
         status = msg_repair(ctx, conn, msg);
         break;
 
@@ -749,6 +749,7 @@ msg_recv_chain(struct context *ctx, struct conn *conn, struct msg *msg)
     size_t msize;
     ssize_t n;
 
+    /* 当前 msg 中的 mbuf 为空或者数据已满则分配一个新的 mbuf */
     mbuf = STAILQ_LAST(&msg->mhdr, mbuf, next);
     if (mbuf == NULL || mbuf_full(mbuf)) {
         mbuf = mbuf_get();
@@ -781,6 +782,7 @@ msg_recv_chain(struct context *ctx, struct conn *conn, struct msg *msg)
         }
 
         /* get next message to parse */
+        /* 当前接收的数据包含多条完整的协议，则需要继续解析下一条数据 */
         nmsg = conn->recv_next(ctx, conn, false);
         if (nmsg == NULL || nmsg == msg) {
             /* no more data to parse */

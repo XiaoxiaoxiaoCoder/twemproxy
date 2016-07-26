@@ -269,9 +269,9 @@ rstatus_t
 conf_pool_each_transform(void *elem, void *data)
 {
     rstatus_t status;
-    struct conf_pool *cp = elem;
-    struct array *server_pool = data;
-    struct server_pool *sp;
+    struct conf_pool    *cp          = elem;
+    struct array        *server_pool = data;
+    struct server_pool  *sp;
 
     ASSERT(cp->valid);
 

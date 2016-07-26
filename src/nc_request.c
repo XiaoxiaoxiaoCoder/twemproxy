@@ -778,6 +778,7 @@ req_send_next(struct context *ctx, struct conn *conn)
 
     ASSERT(!conn->client && !conn->proxy);
 
+    /* 后端svr链接中 */
     if (conn->connecting) {
         server_connected(ctx, conn);
     }
@@ -785,6 +786,7 @@ req_send_next(struct context *ctx, struct conn *conn)
     nmsg = TAILQ_FIRST(&conn->imsg_q);
     if (nmsg == NULL) {
         /* nothing to send as the server inq is empty */
+        /* 没有数据需要发送，干掉可写事件 */
         status = event_del_out(ctx->evb, conn);
         if (status != NC_OK) {
             conn->err = errno;

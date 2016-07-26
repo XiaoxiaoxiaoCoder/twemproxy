@@ -149,6 +149,10 @@ server_each_set_owner(void *elem, void *data)
 
 /*
  * 初始化 server 信息
+ * 
+ * server : 为存放server结构体的数组指针
+ * conf_server : 存放server配置信息
+ * sp: 为 server 所属的 server_pool
  */
 rstatus_t
 server_init(struct array *server, struct array *conf_server,
@@ -612,6 +616,9 @@ server_connected(struct context *ctx, struct conn *conn)
               server->pname.len, server->pname.data);
 }
 
+/*
+ * 后端Svr链接正常，更新链接标识
+ */
 void
 server_ok(struct context *ctx, struct conn *conn)
 {
@@ -629,6 +636,9 @@ server_ok(struct context *ctx, struct conn *conn)
     }
 }
 
+/*
+ * 更新hash节点。如果未设置踢掉失败节点则不需要更新
+ */
 static rstatus_t
 server_pool_update(struct server_pool *pool)
 {
@@ -674,6 +684,9 @@ server_pool_update(struct server_pool *pool)
     return NC_OK;
 }
 
+/*
+ * 根据请求的key获取hash节点值
+ */
 static uint32_t
 server_pool_hash(struct server_pool *pool, uint8_t *key, uint32_t keylen)
 {
@@ -691,6 +704,9 @@ server_pool_hash(struct server_pool *pool, uint8_t *key, uint32_t keylen)
     return pool->key_hash((char *)key, keylen);
 }
 
+/*
+ * 根据请求的key获取server_pool中的后端 server id 值
+ */
 uint32_t
 server_pool_idx(struct server_pool *pool, uint8_t *key, uint32_t keylen)
 {

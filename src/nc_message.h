@@ -231,7 +231,9 @@ struct msg {
     /* 当前解析的token标记 */
     uint8_t              *token;          /* token marker */
 
+    /* 协议解析函数句柄 */
     msg_parse_t          parser;          /* message parser */
+    /* 协议解析结果 */
     msg_parse_result_t   result;          /* message parsing result */
 
     /* 进行消息分片的函数 */
