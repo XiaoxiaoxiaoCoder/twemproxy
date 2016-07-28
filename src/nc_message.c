@@ -404,12 +404,13 @@ msg_put(struct msg *msg)
         mbuf_remove(&msg->mhdr, mbuf);
         mbuf_put(mbuf);
     }
-
+    /* 释放分片数组 */
     if (msg->frag_seq) {
         nc_free(msg->frag_seq);
         msg->frag_seq = NULL;
     }
 
+    /* 释放key数组 */
     if (msg->keys) {
         msg->keys->nelem = 0; /* a hack here */
         array_destroy(msg->keys);

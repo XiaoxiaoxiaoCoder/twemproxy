@@ -288,6 +288,7 @@ ferror:
     msg->ferror = 1;
     nfragment = 1;
 
+    /* 将同属于同一分片的msg都标记为错误 */
     for (cmsg = TAILQ_PREV(msg, msg_tqh, c_tqe);
          cmsg != NULL && cmsg->frag_id == id;
          cmsg = TAILQ_PREV(cmsg, msg_tqh, c_tqe)) {
@@ -451,6 +452,7 @@ req_recv_next(struct context *ctx, struct conn *conn, bool alloc)
 
     ASSERT(conn->client && !conn->proxy);
 
+    /* 链接已经断开 */
     if (conn->eof) {
         msg = conn->rmsg;
 
@@ -513,11 +515,11 @@ req_make_reply(struct context *ctx, struct conn *conn, struct msg *req)
         return NC_ENOMEM;
     }
 
-    req->peer = rsp;
-    rsp->peer = req;
+    req->peer    = rsp;
+    rsp->peer    = req;
     rsp->request = 0;
 
-    req->done = 1;
+    req->done = 1;      //这里标记为done，当请求发送完客户端断开链接的时候，close的时候可以直接回收该msg
     conn->enqueue_outq(ctx, conn, req);
 
     return NC_OK;
@@ -563,6 +565,7 @@ req_filter(struct context *ctx, struct conn *conn, struct msg *msg)
      * If this conn is not authenticated, we will mark it as noforward,
      * and handle it in the redis_reply handler.
      */
+    /* 前端client的身份校验 */
     if (!conn_authenticated(conn)) {
         msg->noforward = 1;
     }
@@ -572,6 +575,7 @@ req_filter(struct context *ctx, struct conn *conn, struct msg *msg)
 
 /*
  * 处理请求发送错误
+ * 此时 msg 已经加入 conn 的发送队列中了
  */
 static void
 req_forward_error(struct context *ctx, struct conn *conn, struct msg *msg)
@@ -658,7 +662,7 @@ req_forward(struct context *ctx, struct conn *c_conn, struct msg *msg)
             return;
         }
     }
-    /* 是否需要添加身份验证 */
+    /* 是否需要添加身份验证,这里是后端svr链接的身份校验 */
     if (!conn_authenticated(s_conn)) {
         status = msg->add_auth(ctx, c_conn, s_conn);
         if (status != NC_OK) {
@@ -706,7 +710,7 @@ req_recv_done(struct context *ctx, struct conn *conn, struct msg *msg,
     if (req_filter(ctx, conn, msg)) {
         return;
     }
-    /* 不需要发送至后端 */
+    /* 不需要发送至后端,可能是客户端没有通过身份校验 */
     if (msg->noforward) {
         status = req_make_reply(ctx, conn, msg);
         if (status != NC_OK) {

@@ -2770,6 +2770,7 @@ redis_post_coalesce_mset(struct msg *request)
     struct msg *response = request->peer;
 
     status = msg_append(response, rsp_ok.data, rsp_ok.len);
+    /* 分片错误，则直接标记链接错误，断开链接 */
     if (status != NC_OK) {
         response->error = 1;        /* mark this msg as err */
         response->err = errno;
@@ -2786,6 +2787,7 @@ redis_post_coalesce_del(struct msg *request)
     rstatus_t status;
 
     status = msg_prepend_format(response, ":%d\r\n", request->integer);
+    /* 分片错误，则直接标记链接错误，断开链接 */
     if (status != NC_OK) {
         response->error = 1;
         response->err = errno;
@@ -2815,7 +2817,8 @@ redis_post_coalesce_mget(struct msg *request)
 
     for (i = 0; i < array_n(request->keys); i++) {      /* for each key */
         sub_msg = request->frag_seq[i]->peer;           /* get it's peer response */
-        if (sub_msg == NULL) {
+        /* 分片错误，则直接标记链接错误，断开链接 */
+        if (sub_msg == NULL) {                     
             response->owner->err = 1;
             return;
         }

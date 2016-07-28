@@ -266,7 +266,9 @@ struct msg {
     uint32_t             narg;            /* # arguments (redis) */
     /* 剩余解析的参数个数 */
     uint32_t             rnarg;           /* running # arg used by parsing fsa (redis) */
+    /* 正在解析的参数的长度 */
     uint32_t             rlen;            /* running length in parsing fsa (redis) */
+    /* redis回复的整型值 */
     uint32_t             integer;         /* integer reply value (redis) */
 
     /* 该分片所属的 msg */
@@ -293,6 +295,7 @@ struct msg {
     unsigned             done:1;          /* done? */
     /* 所有分片是已经完成 */
     unsigned             fdone:1;         /* all fragments are done? */
+    /* 该请求协议对应的客户端已经关闭 */
     unsigned             swallow:1;       /* swallow response? */
     unsigned             redis:1;         /* redis? */
 };

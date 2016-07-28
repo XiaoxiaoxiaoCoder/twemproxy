@@ -363,6 +363,7 @@ core_core(void *arg, uint32_t events)
     /* read takes precedence over write */
     if (events & EVENT_READ) {
         status = core_recv(ctx, conn);
+        /* 结果不正常或者链接已经错误或者链接关闭 */
         if (status != NC_OK || conn->done || conn->err) {
             core_close(ctx, conn);
             return NC_ERROR;

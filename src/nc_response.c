@@ -61,6 +61,7 @@ rsp_make_error(struct context *ctx, struct conn *conn, struct msg *msg)
     ASSERT(msg->owner == conn);
 
     id = msg->frag_id;
+    /* 将属于同一分片的msg的都干掉 */
     if (id != 0) {
         for (err = 0, cmsg = TAILQ_NEXT(msg, c_tqe);
              cmsg != NULL && cmsg->frag_id == id;
@@ -219,6 +220,7 @@ rsp_filter(struct context *ctx, struct conn *conn, struct msg *msg)
         return true;
     }
 
+    /* 消息对应的客户端是否已经关闭 */
     if (pmsg->swallow) {
         conn->swallow_msg(conn, pmsg, msg);
 
